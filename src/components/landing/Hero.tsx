@@ -4,25 +4,28 @@ import { ArrowRight, CheckCircle } from "lucide-react";
 
 const Hero = () => {
   return (
-    <section className="py-20 md:py-32">
+    <section className="py-24 md:py-36">
       <div className="container">
         <div className="mx-auto max-w-4xl text-center">
-          <h1 className="font-display text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+          <h1 className="font-display text-5xl font-bold leading-[1.1] tracking-tight md:text-7xl">
             80% of Digital Transformations Fail.
-            <br />
-            <span className="text-primary">Here's Why Yours Won't.</span>
           </h1>
+          <p className="mt-2 font-display text-4xl font-bold tracking-tight md:text-6xl">
+            <span className="text-primary">Here's Why </span>
+            <span className="text-muted-foreground/50">Yours </span>
+            <span className="text-accent">Won't.</span>
+          </p>
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
+          <p className="mx-auto mt-8 max-w-2xl text-lg text-muted-foreground leading-relaxed">
             Get an AI-powered transformation roadmap in 30 minutes. Built from the industry
             proven frameworks that have powered hundreds of transformations.
           </p>
 
           <div className="mt-10 flex justify-center">
-            <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 py-6 text-base" asChild>
+            <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 h-14 text-base font-semibold" asChild>
               <Link to="/login">
                 Start Free Assessment
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
           </div>
