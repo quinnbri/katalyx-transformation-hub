@@ -1,1 +1,4 @@
 project_id = "witlybnacshxlidkptwt"
+
+[functions.generate-results]
+verify_jwt = false
