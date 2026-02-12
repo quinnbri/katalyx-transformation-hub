@@ -1,23 +1,18 @@
-import { ClipboardCheck, Brain, Rocket } from "lucide-react";
-
 const steps = [
   {
-    icon: ClipboardCheck,
-    step: "01",
-    title: "Take the Assessment",
-    description: "Answer targeted questions across key transformation domains. Takes about 30 minutes.",
+    number: "1",
+    title: "Take Assessment",
+    description: "30-minute enterprise assessment across Strategy, Organization, Platform, Operations, and Governance",
   },
   {
-    icon: Brain,
-    step: "02",
+    number: "2",
     title: "Get Your Roadmap",
-    description: "AI analyzes your responses and generates a prioritized transformation roadmap with specific actions.",
+    description: "AI analyzes your answers and generates a prioritized transformation backlog with effort estimates",
   },
   {
-    icon: Rocket,
-    step: "03",
+    number: "3",
     title: "Start Transforming",
-    description: "Execute with confidence using your personalized playbook, benchmarked against industry standards.",
+    description: "Access 100+ playbooks, industry benchmarks, and implementation guides",
   },
 ];
 
@@ -30,24 +25,18 @@ const HowItWorks = () => {
             How It Works
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Three simple steps from assessment to action
+            Three simple steps to your transformation roadmap
           </p>
         </div>
 
-        <div className="mt-16 grid gap-8 md:grid-cols-3">
-          {steps.map((step, i) => (
-            <div key={step.step} className="relative text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-                <step.icon className="h-7 w-7" />
+        <div className="mt-16 grid gap-12 md:grid-cols-3">
+          {steps.map((step) => (
+            <div key={step.number} className="text-center">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-secondary">
+                <span className="font-display text-3xl font-bold text-primary">{step.number}</span>
               </div>
-              <div className="mt-4 inline-flex items-center rounded-full bg-accent/10 px-3 py-0.5 font-display text-sm font-semibold text-accent">
-                Step {step.step}
-              </div>
-              <h3 className="mt-3 font-display text-xl font-semibold">{step.title}</h3>
-              <p className="mt-2 text-muted-foreground">{step.description}</p>
-              {i < steps.length - 1 && (
-                <div className="absolute right-0 top-8 hidden h-0.5 w-[calc(50%-2rem)] bg-gradient-to-r from-primary/30 to-transparent md:block translate-x-full" />
-              )}
+              <h3 className="mt-6 font-display text-xl font-semibold">{step.title}</h3>
+              <p className="mt-3 text-muted-foreground">{step.description}</p>
             </div>
           ))}
         </div>

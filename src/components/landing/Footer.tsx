@@ -1,22 +1,19 @@
 const Footer = () => {
   return (
     <footer className="border-t border-border py-8">
-      <div className="container flex flex-col items-center justify-between gap-4 md:flex-row">
-        <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded bg-primary">
-            <span className="font-display text-xs font-bold text-primary-foreground">K</span>
-          </div>
-          <span className="font-display text-sm font-semibold">KATALYX</span>
-        </div>
+      <div className="container text-center space-y-2">
         <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} KATALYX. All rights reserved.
+          © {new Date().getFullYear()} KATALYX. Built on proven transformation frameworks.
         </p>
-        <a
-          href="mailto:brian@katalyx.io"
-          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          brian@katalyx.io
-        </a>
+        <p className="text-sm text-muted-foreground">
+          Questions? Email us at{" "}
+          <a
+            href="mailto:contact@katalyx.io"
+            className="text-foreground hover:text-primary transition-colors"
+          >
+            contact@katalyx.io
+          </a>
+        </p>
       </div>
     </footer>
   );
