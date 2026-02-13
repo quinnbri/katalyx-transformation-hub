@@ -12,7 +12,7 @@ const Hero = () => {
           </h1>
           <p className="mt-2 font-display text-4xl font-bold tracking-tight md:text-6xl">
             <span className="text-primary">Here's Why </span>
-            <span className="text-muted-foreground/50">Yours </span>
+            <span className="text-gray-400">Yours </span>
             <span className="text-accent">Won't.</span>
           </p>
 
