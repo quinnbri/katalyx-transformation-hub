@@ -7,14 +7,13 @@ const Hero = () => {
     <section className="py-24 md:py-36">
       <div className="container">
         <div className="mx-auto max-w-4xl text-center">
-          <h1 className="font-display text-5xl font-bold leading-[1.1] tracking-tight md:text-7xl">
-            80% of Digital Transformations Fail.
-          </h1>
-          <p className="mt-2 font-display text-4xl font-bold tracking-tight md:text-6xl">
-            <span className="text-primary">Here's Why </span>
+          <h2 className="text-5xl md:text-7xl font-bold leading-tight mb-8 text-center">
+            <span className="text-gray-900">80% of Digital Transformations Fail.</span>
+            <br />
+            <span className="text-teal-600">Here's Why </span>
             <span className="text-gray-400">Yours </span>
-            <span className="text-accent">Won't.</span>
-          </p>
+            <span className="text-[#ff6b6b]">Won't.</span>
+          </h2>
 
           <p className="mx-auto mt-8 max-w-2xl text-lg text-muted-foreground leading-relaxed">
             Get an AI-powered transformation roadmap in 30 minutes. Built from the industry
