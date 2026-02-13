@@ -7,9 +7,9 @@ const Header = () => {
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
-          <img src={katalyxLogo} alt="Katalyx logo" className="h-7 w-7" />
+          <img src={katalyxLogo} alt="Katalyx logo" className="h-8 w-8" />
           <span className="font-display text-xl font-bold tracking-tight">
-            <span className="text-primary">KATALY</span>
+            <span className="text-foreground">KATALY</span>
             <span className="text-accent">X</span>
           </span>
         </Link>
