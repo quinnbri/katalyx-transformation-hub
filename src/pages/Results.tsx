@@ -4,7 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ArrowRight, Download, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import {
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+} from "recharts";
 
 interface DomainScore {
   score: number;
@@ -42,7 +46,7 @@ export default function Results() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       const { data: r } = await supabase
         .from("assessment_results")
         .select("*")
@@ -67,7 +71,7 @@ export default function Results() {
 
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, [assessmentId]);
 
   if (loading) {
@@ -90,10 +94,27 @@ export default function Results() {
   const scoreColor = (score: number) =>
     score >= 80 ? "text-green-600" : score >= 60 ? "text-primary" : score >= 40 ? "text-yellow-600" : "text-accent";
 
+  const barColor = (score: number) =>
+    score >= 80 ? "hsl(142, 71%, 45%)" : score >= 60 ? "hsl(174, 84%, 32%)" : score >= 40 ? "hsl(45, 93%, 47%)" : "hsl(0, 84%, 60%)";
+
   const effortBadge = (val: string) => {
     const colors: Record<string, string> = { Low: "bg-green-100 text-green-700", Medium: "bg-yellow-100 text-yellow-700", High: "bg-red-100 text-red-700" };
     return colors[val] || "bg-muted text-muted-foreground";
   };
+
+  // Chart data
+  const radarData = Object.entries(result.domain_scores).map(([domain, ds]) => ({
+    domain,
+    score: ds.score,
+    fullMark: 100,
+  }));
+
+  const barData = Object.entries(result.domain_scores).map(([domain, ds]) => ({
+    domain: domain.length > 15 ? domain.slice(0, 14) + "…" : domain,
+    fullDomain: domain,
+    score: ds.score,
+    level: ds.level,
+  }));
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -106,7 +127,7 @@ export default function Results() {
         </div>
       </header>
 
-      <main className="container max-w-4xl py-10">
+      <main className="container max-w-5xl py-10">
         {/* Overall Score */}
         <Card className="mb-8">
           <CardContent className="flex flex-col items-center py-10">
@@ -116,6 +137,60 @@ export default function Results() {
             </p>
           </CardContent>
         </Card>
+
+        {/* Charts Row */}
+        <div className="grid gap-6 md:grid-cols-2 mb-8">
+          {/* Radar Chart */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Domain Radar</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <RadarChart data={radarData}>
+                  <PolarGrid stroke="hsl(var(--border))" />
+                  <PolarAngleAxis
+                    dataKey="domain"
+                    tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  />
+                  <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10 }} />
+                  <Radar
+                    name="Score"
+                    dataKey="score"
+                    stroke="hsl(174, 84%, 32%)"
+                    fill="hsl(174, 84%, 32%)"
+                    fillOpacity={0.25}
+                    strokeWidth={2}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Bar Chart */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Score by Domain</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={barData} layout="vertical" margin={{ left: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
+                  <YAxis type="category" dataKey="domain" width={120} tick={{ fontSize: 11 }} />
+                  <Tooltip
+                    formatter={(value: number, _name: string, props: any) => [
+                      `${value}% — ${props.payload.level}`,
+                      "Score",
+                    ]}
+                    contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))" }}
+                  />
+                  <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                    {barData.map((entry, i) => (
+                      <Cell key={i} fill={barColor(entry.score)} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* AI Summary */}
         <Card className="mb-8">
