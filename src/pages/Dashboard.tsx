@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, GitBranch, Building2, ArrowRight, LogOut, Eye } from "lucide-react";
+import { Brain, GitBranch, Building2, ArrowRight, LogOut, Eye, BarChart3 } from "lucide-react";
 
 const frameworks = [
   {
@@ -83,6 +83,9 @@ export default function Dashboard() {
             </span>
           </Link>
           <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/benchmarks"><BarChart3 className="mr-1.5 h-4 w-4" /> Benchmarks</Link>
+            </Button>
             <span className="text-sm text-muted-foreground">{user?.email}</span>
             <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut className="mr-1.5 h-4 w-4" /> Sign Out
