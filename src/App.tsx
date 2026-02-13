@@ -11,6 +11,7 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Assessment from "./pages/Assessment";
 import Results from "./pages/Results";
+import Benchmarks from "./pages/Benchmarks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/assessment/:framework" element={<ProtectedRoute><Assessment /></ProtectedRoute>} />
             <Route path="/results/:assessmentId" element={<ProtectedRoute><Results /></ProtectedRoute>} />
+            <Route path="/benchmarks" element={<ProtectedRoute><Benchmarks /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
