@@ -171,29 +171,53 @@ export type Database = {
       }
       profiles: {
         Row: {
+          annual_revenue: string | null
+          cloud_providers: string[] | null
           company: string | null
+          company_size: string | null
           created_at: string
           full_name: string | null
+          headquarters_region: string | null
           id: string
+          industry: string | null
+          infrastructure_type: string | null
+          onboarding_completed: boolean
           role: string | null
+          tech_team_size: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          annual_revenue?: string | null
+          cloud_providers?: string[] | null
           company?: string | null
+          company_size?: string | null
           created_at?: string
           full_name?: string | null
+          headquarters_region?: string | null
           id?: string
+          industry?: string | null
+          infrastructure_type?: string | null
+          onboarding_completed?: boolean
           role?: string | null
+          tech_team_size?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          annual_revenue?: string | null
+          cloud_providers?: string[] | null
           company?: string | null
+          company_size?: string | null
           created_at?: string
           full_name?: string | null
+          headquarters_region?: string | null
           id?: string
+          industry?: string | null
+          infrastructure_type?: string | null
+          onboarding_completed?: boolean
           role?: string | null
+          tech_team_size?: string | null
           updated_at?: string
           user_id?: string
         }
