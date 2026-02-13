@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, GitBranch, Building2, ArrowRight, LogOut } from "lucide-react";
+import { Brain, GitBranch, Building2, ArrowRight, LogOut, Eye } from "lucide-react";
 
 const frameworks = [
   {
@@ -111,11 +111,18 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent className="mt-auto space-y-3">
                   {latestCompleted && (
-                    <div className="rounded-md bg-primary/5 p-3 text-sm">
-                      <span className="font-medium text-primary">Score: {latestCompleted.score ?? "—"}%</span>
-                      <span className="ml-2 text-muted-foreground">
-                        · {new Date(latestCompleted.completed_at!).toLocaleDateString()}
-                      </span>
+                    <div className="rounded-md bg-primary/5 p-3 text-sm flex items-center justify-between">
+                      <div>
+                        <span className="font-medium text-primary">Score: {latestCompleted.score ?? "—"}%</span>
+                        <span className="ml-2 text-muted-foreground">
+                          · {new Date(latestCompleted.completed_at!).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" asChild>
+                        <Link to={`/results/${latestCompleted.id}`}>
+                          <Eye className="mr-1 h-3 w-3" /> View
+                        </Link>
+                      </Button>
                     </div>
                   )}
                   {inProgress && (
@@ -140,14 +147,15 @@ export default function Dashboard() {
           <div className="mt-12">
             <h2 className="mb-4 font-display text-xl font-bold">Past Assessments</h2>
             <div className="rounded-lg border bg-background">
-              <div className="grid grid-cols-4 gap-4 border-b px-6 py-3 text-sm font-medium text-muted-foreground">
+              <div className="grid grid-cols-5 gap-4 border-b px-6 py-3 text-sm font-medium text-muted-foreground">
                 <span>Framework</span>
                 <span>Status</span>
                 <span>Score</span>
                 <span>Date</span>
+                <span></span>
               </div>
               {assessments.map((a) => (
-                <div key={a.id} className="grid grid-cols-4 gap-4 border-b last:border-0 px-6 py-4 text-sm">
+                <div key={a.id} className="grid grid-cols-5 gap-4 border-b last:border-0 px-6 py-4 text-sm items-center">
                   <span className="font-medium capitalize">{a.framework.replace(/_/g, " ")}</span>
                   <span>
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -158,6 +166,17 @@ export default function Dashboard() {
                   </span>
                   <span>{a.score != null ? `${a.score}%` : "—"}</span>
                   <span className="text-muted-foreground">{new Date(a.started_at).toLocaleDateString()}</span>
+                  <span>
+                    {a.status === "completed" ? (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" asChild>
+                        <Link to={`/results/${a.id}`}><Eye className="mr-1 h-3 w-3" /> Results</Link>
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" asChild>
+                        <Link to={`/assessment/${a.framework}`}>Continue</Link>
+                      </Button>
+                    )}
+                  </span>
                 </div>
               ))}
             </div>
