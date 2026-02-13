@@ -7,11 +7,11 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-teal-600 to-teal-700">
-            <div className="h-3 w-3 rounded-full bg-[#ff6b6b]" />
+            <div className="h-3 w-3 rounded-full bg-coral-400" />
           </div>
           <span className="font-display text-2xl font-bold tracking-tight">
             <span className="text-teal-600">KATALY</span>
-            <span className="text-[#ff6b6b]">X</span>
+            <span className="text-coral-400">X</span>
           </span>
         </Link>
 

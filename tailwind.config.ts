@@ -18,6 +18,9 @@ export default {
         display: ['Space Grotesk', 'sans-serif'],
       },
       colors: {
+        coral: {
+          400: '#ff6b6b',
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
