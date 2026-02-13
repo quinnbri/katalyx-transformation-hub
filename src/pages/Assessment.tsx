@@ -26,12 +26,12 @@ const frameworkNames: Record<string, string> = {
   enterprise_operating_model: "Enterprise Operating Model",
 };
 
-const scaleDescriptions: Record<number, { tag: string; color: string }> = {
-  1: { tag: "Beginning", color: "text-red-500 bg-red-500/10 border-red-500/20" },
-  2: { tag: "Developing", color: "text-orange-500 bg-orange-500/10 border-orange-500/20" },
-  3: { tag: "Established", color: "text-yellow-600 bg-yellow-500/10 border-yellow-500/20" },
-  4: { tag: "Advanced", color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" },
-  5: { tag: "Leading", color: "text-primary bg-primary/10 border-primary/20" },
+const scaleColors: Record<number, string> = {
+  1: "border-red-500/40 bg-red-500/5",
+  2: "border-orange-500/40 bg-orange-500/5",
+  3: "border-yellow-500/40 bg-yellow-500/5",
+  4: "border-emerald-500/40 bg-emerald-500/5",
+  5: "border-primary/40 bg-primary/5",
 };
 
 export default function Assessment() {
@@ -228,26 +228,20 @@ export default function Assessment() {
                 >
                   {q.options?.labels?.map((label, i) => {
                     const level = i + 1;
-                    const scale = scaleDescriptions[level];
                     const isSelected = responses[q.id] === String(level);
                     return (
                       <div
                         key={i}
-                        className={`flex items-center space-x-3 rounded-lg border p-3.5 transition-all cursor-pointer ${
+                        className={`flex items-center space-x-3 rounded-lg border p-3 transition-all cursor-pointer ${
                           isSelected
-                            ? `${scale.color} border-current/30 shadow-sm`
+                            ? `${scaleColors[level]} shadow-sm`
                             : "hover:bg-muted/50 border-border"
                         }`}
                         onClick={() => saveResponse(q.id, String(level))}
                       >
                         <RadioGroupItem value={String(level)} id={`${q.id}-${i}`} />
-                        <Label htmlFor={`${q.id}-${i}`} className="flex-1 cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${scale.color}`}>
-                              {scale.tag}
-                            </span>
-                            <span className="text-sm font-medium">{label}</span>
-                          </div>
+                        <Label htmlFor={`${q.id}-${i}`} className="flex-1 cursor-pointer text-sm">
+                          <span className="font-medium">{level}.</span> {label}
                         </Label>
                       </div>
                     );
