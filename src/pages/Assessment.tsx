@@ -16,7 +16,7 @@ interface Question {
   domain: string;
   question_text: string;
   question_type: string;
-  options: { min: number; max: number; labels: string[] };
+  options: { min: number; max: number; labels: string[]; descriptions?: string[] };
   sort_order: number;
 }
 
@@ -239,9 +239,12 @@ export default function Assessment() {
                         }`}
                         onClick={() => saveResponse(q.id, String(level))}
                       >
-                        <RadioGroupItem value={String(level)} id={`${q.id}-${i}`} />
-                        <Label htmlFor={`${q.id}-${i}`} className="flex-1 cursor-pointer text-sm">
-                          <span className="font-medium">{level}.</span> {label}
+                        <RadioGroupItem value={String(level)} id={`${q.id}-${i}`} className="mt-0.5 shrink-0" />
+                        <Label htmlFor={`${q.id}-${i}`} className="flex-1 cursor-pointer">
+                          <span className="text-sm font-medium">{label}</span>
+                          {q.options?.descriptions?.[i] && (
+                            <span className="block text-xs text-muted-foreground mt-0.5">{q.options.descriptions[i]}</span>
+                          )}
                         </Label>
                       </div>
                     );
