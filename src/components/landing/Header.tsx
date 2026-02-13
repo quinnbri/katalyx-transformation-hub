@@ -1,16 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import katalyxLogo from "@/assets/katalyx-icon-only.svg";
 
 const Header = () => {
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
-          <img src={katalyxLogo} alt="Katalyx logo" className="h-8 w-8" />
-          <span className="font-display text-xl font-bold tracking-tight">
-            <span className="text-foreground">KATALY</span>
-            <span className="text-accent">X</span>
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-teal-600 to-teal-700">
+            <div className="h-3 w-3 rounded-full bg-[#ff6b6b]" />
+          </div>
+          <span className="font-display text-2xl font-bold tracking-tight">
+            <span className="text-teal-600">KATALY</span>
+            <span className="text-[#ff6b6b]">X</span>
           </span>
         </Link>
 
