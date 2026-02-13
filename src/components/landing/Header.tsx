@@ -7,7 +7,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
-          <img src={katalyxLogo} alt="Katalyx logo" className="h-9 w-9" />
+          <img src={katalyxLogo} alt="Katalyx logo" className="h-10 w-10" />
           <span className="font-display text-2xl font-bold tracking-tight text-foreground">
             KATALYX
           </span>
