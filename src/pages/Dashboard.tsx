@@ -9,24 +9,30 @@ import { Brain, GitBranch, Building2, ArrowRight, LogOut, Eye } from "lucide-rea
 const frameworks = [
   {
     id: "ai_readiness",
-    title: "AI Readiness Assessment",
-    description: "Evaluate your organization's readiness to adopt and scale AI across strategy, data, talent, infrastructure, and governance.",
+    title: "AI Readiness",
+    description: "Assess how prepared your org is to adopt and scale AI.",
+    details: "5 domains · 25 questions · ~10 min",
+    domains: ["Strategy", "Data", "Talent", "Infrastructure", "Governance"],
     icon: Brain,
     color: "text-primary",
     bgColor: "bg-primary/10",
   },
   {
     id: "devops",
-    title: "DevOps Team Assessment",
-    description: "Measure your team's DevOps maturity using DORA metrics — deployment frequency, lead time, change failure rate, and recovery time.",
+    title: "DevOps Maturity",
+    description: "Benchmark your team against the four DORA metrics.",
+    details: "4 domains · 16 questions · ~7 min",
+    domains: ["Deployment Frequency", "Lead Time", "Change Failure Rate", "Recovery Time"],
     icon: GitBranch,
     color: "text-accent",
     bgColor: "bg-accent/10",
   },
   {
     id: "enterprise_operating_model",
-    title: "Enterprise Operating Model",
-    description: "Assess your enterprise across 5 domains: Strategy, Organization, Platform, Operations, and Governance.",
+    title: "Operating Model",
+    description: "Evaluate your enterprise structure across five key pillars.",
+    details: "5 domains · 20 questions · ~8 min",
+    domains: ["Strategy", "Organization", "Platform", "Operations", "Governance"],
     icon: Building2,
     color: "text-primary",
     bgColor: "bg-primary/10",
@@ -108,6 +114,14 @@ export default function Dashboard() {
                   </div>
                   <CardTitle className="text-lg">{fw.title}</CardTitle>
                   <CardDescription className="text-sm">{fw.description}</CardDescription>
+                  <p className="text-xs text-muted-foreground/70 mt-1">{fw.details}</p>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {fw.domains.map((d) => (
+                      <span key={d} className="inline-flex rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        {d}
+                      </span>
+                    ))}
+                  </div>
                 </CardHeader>
                 <CardContent className="mt-auto space-y-3">
                   {latestCompleted && (
