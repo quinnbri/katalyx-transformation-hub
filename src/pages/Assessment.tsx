@@ -26,6 +26,14 @@ const frameworkNames: Record<string, string> = {
   enterprise_operating_model: "Enterprise Operating Model",
 };
 
+const scaleDescriptions: Record<number, { tag: string; color: string }> = {
+  1: { tag: "Beginning", color: "text-red-500 bg-red-500/10 border-red-500/20" },
+  2: { tag: "Developing", color: "text-orange-500 bg-orange-500/10 border-orange-500/20" },
+  3: { tag: "Established", color: "text-yellow-600 bg-yellow-500/10 border-yellow-500/20" },
+  4: { tag: "Advanced", color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" },
+  5: { tag: "Leading", color: "text-primary bg-primary/10 border-primary/20" },
+};
+
 export default function Assessment() {
   const { framework } = useParams<{ framework: string }>();
   const { user } = useAuth();
@@ -218,14 +226,32 @@ export default function Assessment() {
                   onValueChange={(val) => saveResponse(q.id, val)}
                   className="space-y-2"
                 >
-                  {q.options?.labels?.map((label, i) => (
-                    <div key={i} className="flex items-center space-x-3 rounded-md border p-3 hover:bg-muted/50 transition-colors">
-                      <RadioGroupItem value={String(i + 1)} id={`${q.id}-${i}`} />
-                      <Label htmlFor={`${q.id}-${i}`} className="flex-1 cursor-pointer text-sm">
-                        <span className="font-medium">{i + 1}.</span> {label}
-                      </Label>
-                    </div>
-                  ))}
+                  {q.options?.labels?.map((label, i) => {
+                    const level = i + 1;
+                    const scale = scaleDescriptions[level];
+                    const isSelected = responses[q.id] === String(level);
+                    return (
+                      <div
+                        key={i}
+                        className={`flex items-center space-x-3 rounded-lg border p-3.5 transition-all cursor-pointer ${
+                          isSelected
+                            ? `${scale.color} border-current/30 shadow-sm`
+                            : "hover:bg-muted/50 border-border"
+                        }`}
+                        onClick={() => saveResponse(q.id, String(level))}
+                      >
+                        <RadioGroupItem value={String(level)} id={`${q.id}-${i}`} />
+                        <Label htmlFor={`${q.id}-${i}`} className="flex-1 cursor-pointer">
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${scale.color}`}>
+                              {scale.tag}
+                            </span>
+                            <span className="text-sm font-medium">{label}</span>
+                          </div>
+                        </Label>
+                      </div>
+                    );
+                  })}
                 </RadioGroup>
               </CardContent>
             </Card>
