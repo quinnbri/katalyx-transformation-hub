@@ -12,7 +12,7 @@ const Hero = () => {
             <br />
             <span className="text-teal-600">Here's Why </span>
             <span className="text-gray-400">Yours </span>
-            <span className="text-coral-400">Won't.</span>
+            <span style={{ color: '#ff6b6b' }}>Won't.</span>
           </h2>
 
           <p className="mx-auto mt-8 max-w-2xl text-lg text-muted-foreground leading-relaxed">
