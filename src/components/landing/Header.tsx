@@ -5,13 +5,10 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-3">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-teal-600 to-teal-700">
-            <div className="h-3 w-3 rounded-full bg-coral-400" />
-          </div>
-          <span className="font-display text-2xl font-bold tracking-tight">
-            <span className="text-teal-600">KATALY</span>
-            <span className="text-coral-400">X</span>
+        <Link to="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-600 to-coral-400"></div>
+          <span className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-coral-400 bg-clip-text text-transparent">
+            KATALYX
           </span>
         </Link>
 
