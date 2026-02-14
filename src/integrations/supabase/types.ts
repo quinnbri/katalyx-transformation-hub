@@ -169,6 +169,53 @@ export type Database = {
         }
         Relationships: []
       }
+      business_context: {
+        Row: {
+          additional_context: string | null
+          assessment_id: string
+          budget_usd: number | null
+          created_at: string
+          hard_constraints: string[] | null
+          id: string
+          target_date: string | null
+          transformation_driver: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          additional_context?: string | null
+          assessment_id: string
+          budget_usd?: number | null
+          created_at?: string
+          hard_constraints?: string[] | null
+          id?: string
+          target_date?: string | null
+          transformation_driver: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          additional_context?: string | null
+          assessment_id?: string
+          budget_usd?: number | null
+          created_at?: string
+          hard_constraints?: string[] | null
+          id?: string
+          target_date?: string | null
+          transformation_driver?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_context_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           annual_revenue: string | null

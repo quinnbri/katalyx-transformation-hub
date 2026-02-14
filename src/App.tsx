@@ -13,6 +13,8 @@ import Assessment from "./pages/Assessment";
 import Results from "./pages/Results";
 import Benchmarks from "./pages/Benchmarks";
 import Onboarding from "./pages/Onboarding";
+import BusinessContext from "./pages/BusinessContext";
+import Backlog from "./pages/Backlog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +35,8 @@ const App = () => (
             <Route path="/results/:assessmentId" element={<ProtectedRoute><Results /></ProtectedRoute>} />
             <Route path="/benchmarks" element={<ProtectedRoute><Benchmarks /></ProtectedRoute>} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/business-context/:assessmentId" element={<ProtectedRoute><BusinessContext /></ProtectedRoute>} />
+            <Route path="/backlog/:sessionId" element={<ProtectedRoute><Backlog /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
