@@ -7,7 +7,7 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-600 to-coral-400"></div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-coral-400 bg-clip-text text-transparent">
+          <span className="text-2xl font-bold bg-gradient-to-br from-teal-600 to-coral-400 bg-clip-text text-transparent">
             KATALYX
           </span>
         </Link>

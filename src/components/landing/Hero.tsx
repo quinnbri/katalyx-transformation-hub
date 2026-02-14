@@ -10,7 +10,7 @@ const Hero = () => {
           <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
             <span className="text-gray-900">80% of Digital Transformations Fail.</span>
             <br />
-            <span className="bg-gradient-to-r from-teal-600 to-coral-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-br from-teal-600 to-coral-400 bg-clip-text text-transparent">
               Here's Why Yours Won't.
             </span>
           </h1>
