@@ -75,7 +75,7 @@ Return ONLY valid JSON, no markdown.`;
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "AI analysis failed" }), {
+      return new Response(JSON.stringify({ error: "Unable to generate assessment results. Please try again." }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -90,7 +90,7 @@ Return ONLY valid JSON, no markdown.`;
       parsed = JSON.parse(cleaned);
     } catch {
       console.error("Failed to parse AI response:", content);
-      return new Response(JSON.stringify({ error: "Failed to parse AI analysis" }), {
+      return new Response(JSON.stringify({ error: "Unable to process assessment results. Please try again." }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -100,7 +100,7 @@ Return ONLY valid JSON, no markdown.`;
     });
   } catch (e) {
     console.error("generate-results error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: "Unable to generate assessment results. Please try again." }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
