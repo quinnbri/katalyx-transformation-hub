@@ -259,7 +259,7 @@ export default function Assessment() {
         <div className="mt-8 flex justify-between">
           <Button
             variant="outline"
-            onClick={() => setCurrentDomainIdx((i) => i - 1)}
+            onClick={() => { setCurrentDomainIdx((i) => i - 1); window.scrollTo(0, 0); }}
             disabled={currentDomainIdx === 0}
           >
             <ArrowLeft className="mr-1.5 h-4 w-4" /> Previous
@@ -276,7 +276,7 @@ export default function Assessment() {
               )}
             </Button>
           ) : (
-            <Button onClick={() => setCurrentDomainIdx((i) => i + 1)} disabled={!allCurrentAnswered}>
+            <Button onClick={() => { setCurrentDomainIdx((i) => i + 1); window.scrollTo(0, 0); }} disabled={!allCurrentAnswered}>
               Next: {domains[currentDomainIdx + 1]} <ArrowRight className="ml-1.5 h-4 w-4" />
             </Button>
           )}
