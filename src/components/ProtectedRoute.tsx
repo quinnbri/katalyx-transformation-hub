@@ -1,9 +1,19 @@
-import { useEffect, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { createContext, useContext, useEffect, useState } from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
-export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+interface ProtectedContextType {
+  markOnboardingComplete: () => void;
+}
+
+const ProtectedContext = createContext<ProtectedContextType>({ markOnboardingComplete: () => {} });
+
+export function useProtected() {
+  return useContext(ProtectedContext);
+}
+
+export default function ProtectedRoute() {
   const { user, loading } = useAuth();
   const location = useLocation();
   const [checkingProfile, setCheckingProfile] = useState(true);
@@ -39,10 +49,13 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   if (!user) return <Navigate to="/login" replace />;
 
-  // Allow onboarding page through; redirect others to onboarding if not completed
   if (!onboardingDone && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }
 
-  return <>{children}</>;
+  return (
+    <ProtectedContext.Provider value={{ markOnboardingComplete: () => setOnboardingDone(true) }}>
+      <Outlet />
+    </ProtectedContext.Provider>
+  );
 }
