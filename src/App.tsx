@@ -31,13 +31,15 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/assessment/:framework" element={<ProtectedRoute><Assessment /></ProtectedRoute>} />
-            <Route path="/results/:assessmentId" element={<ProtectedRoute><Results /></ProtectedRoute>} />
-            <Route path="/benchmarks" element={<ProtectedRoute><Benchmarks /></ProtectedRoute>} />
-            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-            <Route path="/business-context/:assessmentId" element={<ProtectedRoute><BusinessContext /></ProtectedRoute>} />
-            <Route path="/backlog/:sessionId" element={<ProtectedRoute><Backlog /></ProtectedRoute>} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/assessment/:framework" element={<Assessment />} />
+              <Route path="/results/:assessmentId" element={<Results />} />
+              <Route path="/benchmarks" element={<Benchmarks />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/business-context/:assessmentId" element={<BusinessContext />} />
+              <Route path="/backlog/:sessionId" element={<Backlog />} />
+            </Route>
             <Route path="/shared/:token" element={<SharedBacklog />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
