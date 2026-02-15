@@ -72,25 +72,6 @@ const cloudProviders = [
   "Other / Private Cloud",
 ];
 
-const revenueRanges = [
-  "Under $1M",
-  "$1M–$10M",
-  "$10M–$50M",
-  "$50M–$250M",
-  "$250M–$1B",
-  "$1B–$10B",
-  "$10B+",
-  "Prefer not to say",
-];
-
-const regions = [
-  "North America",
-  "Europe",
-  "Asia-Pacific",
-  "Latin America",
-  "Middle East & Africa",
-  "Global / Multiple",
-];
 
 export default function Onboarding() {
   const { user } = useAuth();
@@ -102,8 +83,6 @@ export default function Onboarding() {
   const [techTeamSize, setTechTeamSize] = useState("");
   const [infraType, setInfraType] = useState("");
   const [selectedClouds, setSelectedClouds] = useState<string[]>([]);
-  const [revenue, setRevenue] = useState("");
-  const [region, setRegion] = useState("");
   const [company, setCompany] = useState("");
 
   const toggleCloud = (provider: string) => {
@@ -131,8 +110,6 @@ export default function Onboarding() {
         tech_team_size: techTeamSize,
         infrastructure_type: infraType,
         cloud_providers: selectedClouds.length > 0 ? selectedClouds : null,
-        annual_revenue: revenue || null,
-        headquarters_region: region || null,
         onboarding_completed: true,
       } as any)
       .eq("user_id", user.id);
@@ -249,31 +226,6 @@ export default function Onboarding() {
               </div>
             </div>
 
-            {/* Revenue & Region */}
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Annual Revenue</Label>
-                <Select value={revenue} onValueChange={setRevenue}>
-                  <SelectTrigger><SelectValue placeholder="Select range" /></SelectTrigger>
-                  <SelectContent>
-                    {revenueRanges.map((r) => (
-                      <SelectItem key={r} value={r}>{r}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Headquarters Region</Label>
-                <Select value={region} onValueChange={setRegion}>
-                  <SelectTrigger><SelectValue placeholder="Select region" /></SelectTrigger>
-                  <SelectContent>
-                    {regions.map((r) => (
-                      <SelectItem key={r} value={r}>{r}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
             <Button type="submit" className="w-full" disabled={saving}>
               {saving ? (
