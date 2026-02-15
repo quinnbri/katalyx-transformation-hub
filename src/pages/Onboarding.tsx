@@ -211,17 +211,16 @@ export default function Onboarding() {
               <Label>Cloud Providers (select all that apply)</Label>
               <div className="grid grid-cols-2 gap-2">
                 {cloudProviders.map((provider) => (
-                  <div
+                  <label
                     key={provider}
                     className="flex items-center space-x-2 rounded-lg border border-border p-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => toggleCloud(provider)}
                   >
                     <Checkbox
                       checked={selectedClouds.includes(provider)}
                       onCheckedChange={() => toggleCloud(provider)}
                     />
                     <span className="text-sm">{provider}</span>
-                  </div>
+                  </label>
                 ))}
               </div>
             </div>
