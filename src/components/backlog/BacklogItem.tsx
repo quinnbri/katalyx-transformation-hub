@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Collapsible,
   CollapsibleContent,
@@ -16,6 +18,9 @@ import {
   Target,
   Sparkles,
   TrendingUp,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +33,13 @@ export interface BacklogItemROI {
   payback?: string;
 }
 
+export interface EditableFields {
+  title: string;
+  effort: number;
+  owner: string;
+  successMetric: string;
+}
+
 export interface BacklogItemProps {
   title: string;
   effort: number;
@@ -38,7 +50,9 @@ export interface BacklogItemProps {
   aiContext: string;
   estimatedROI?: BacklogItemROI;
   status?: BacklogItemStatus;
+  isCustomized?: boolean;
   onStatusChange?: (status: BacklogItemStatus) => void;
+  onEdit?: (fields: EditableFields) => void;
 }
 
 const impactStyles: Record<string, string> = {
@@ -60,9 +74,13 @@ export default function BacklogItem({
   aiContext,
   estimatedROI,
   status = "todo",
+  isCustomized,
   onStatusChange,
+  onEdit,
 }: BacklogItemProps) {
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<EditableFields>({ title, effort, owner, successMetric });
 
   const cycleStatus = () => {
     const idx = statusCycle.indexOf(status);
@@ -70,21 +88,29 @@ export default function BacklogItem({
     onStatusChange?.(next);
   };
 
+  const startEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDraft({ title, effort, owner, successMetric });
+    setEditing(true);
+    if (!open) setOpen(true);
+  };
+
+  const cancelEdit = () => setEditing(false);
+
+  const saveEdit = () => {
+    onEdit?.(draft);
+    setEditing(false);
+  };
+
   const checked = status === "complete";
   const indeterminate = status === "in_progress";
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <Card
-        className={cn(
-          "transition-all",
-          status === "complete" && "opacity-60"
-        )}
-      >
+      <Card className={cn("transition-all", status === "complete" && "opacity-60")}>
         {/* Collapsed row */}
         <CardHeader className="p-0">
           <div className="flex items-center gap-3 px-4 py-3">
-            {/* Checkbox */}
             <Checkbox
               checked={indeterminate ? "indeterminate" : checked}
               onCheckedChange={cycleStatus}
@@ -92,7 +118,6 @@ export default function BacklogItem({
               className="shrink-0"
             />
 
-            {/* Expand trigger */}
             <CollapsibleTrigger className="flex flex-1 items-center gap-3 text-left min-w-0">
               <ChevronDown
                 className={cn(
@@ -100,28 +125,39 @@ export default function BacklogItem({
                   open ? "rotate-0" : "-rotate-90"
                 )}
               />
-              <span
-                className={cn(
-                  "text-sm font-medium truncate",
-                  status === "complete" && "line-through"
-                )}
-              >
-                {title}
-              </span>
+              {editing ? (
+                <Input
+                  value={draft.title}
+                  onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
+                  onClick={(e) => e.stopPropagation()}
+                  className="h-7 text-sm font-medium"
+                />
+              ) : (
+                <span className={cn("text-sm font-medium truncate", status === "complete" && "line-through")}>
+                  {title}
+                </span>
+              )}
             </CollapsibleTrigger>
 
-            {/* Meta chips */}
+            {/* Meta chips + edit button */}
             <div className="flex items-center gap-2 shrink-0">
+              {isCustomized && (
+                <Badge variant="outline" className="text-[10px] bg-accent/50 text-accent-foreground border-accent">
+                  Edited
+                </Badge>
+              )}
               <span className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" />
                 {effort}h
               </span>
-              <Badge
-                variant="outline"
-                className={cn("text-[10px] font-semibold", impactStyles[impact])}
-              >
+              <Badge variant="outline" className={cn("text-[10px] font-semibold", impactStyles[impact])}>
                 {impact}
               </Badge>
+              {onEdit && !editing && (
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={startEdit}>
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -129,79 +165,107 @@ export default function BacklogItem({
         {/* Expanded details */}
         <CollapsibleContent>
           <CardContent className="border-t px-4 pt-4 pb-4 space-y-4">
-            {/* Key details grid */}
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Detail icon={Clock} label="Effort" value={`${effort} hours`} />
-              <Detail icon={Flame} label="Impact" value={impact} />
-              <Detail icon={User} label="Owner" value={owner} />
-              <Detail icon={Target} label="Success Metric" value={successMetric} />
-            </div>
-
-            {/* Dependencies */}
-            {dependencies.length > 0 && (
-              <div className="flex items-start gap-2 text-sm">
-                <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                <div>
-                  <span className="text-xs font-medium text-muted-foreground">Dependencies</span>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    {dependencies.map((dep) => (
-                      <Badge key={dep} variant="secondary" className="text-[10px]">
-                        {dep}
-                      </Badge>
-                    ))}
+            {editing ? (
+              /* ── Edit form ── */
+              <div className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground">Effort (hours)</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={draft.effort}
+                      onChange={(e) => setDraft((d) => ({ ...d, effort: Math.max(1, Number(e.target.value)) }))}
+                      className="mt-1 h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Owner</label>
+                    <Input
+                      value={draft.owner}
+                      onChange={(e) => setDraft((d) => ({ ...d, owner: e.target.value }))}
+                      className="mt-1 h-8 text-sm"
+                    />
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* AI Context */}
-            {aiContext && (
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-primary mb-1">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Why this matters
+                <div>
+                  <label className="text-xs text-muted-foreground">Success Metric</label>
+                  <Input
+                    value={draft.successMetric}
+                    onChange={(e) => setDraft((d) => ({ ...d, successMetric: e.target.value }))}
+                    className="mt-1 h-8 text-sm"
+                  />
                 </div>
-                <p className="text-sm text-foreground/80 leading-relaxed">{aiContext}</p>
-              </div>
-            )}
-
-            {/* ROI Breakdown */}
-            {estimatedROI && Object.values(estimatedROI).some(Boolean) && (
-              <div className="rounded-lg border bg-muted/40 p-3">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-2">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  ROI Breakdown
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2 text-sm">
-                  {estimatedROI.timeSavings && (
-                    <ROIRow label="Time Savings" value={estimatedROI.timeSavings} />
-                  )}
-                  {estimatedROI.riskReduction && (
-                    <ROIRow label="Risk Reduction" value={estimatedROI.riskReduction} />
-                  )}
-                  {estimatedROI.cost && (
-                    <ROIRow label="Cost" value={estimatedROI.cost} />
-                  )}
-                  {estimatedROI.payback && (
-                    <ROIRow label="Payback" value={estimatedROI.payback} />
-                  )}
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={saveEdit}>
+                    <Check className="mr-1.5 h-3.5 w-3.5" /> Save Changes
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={cancelEdit}>
+                    <X className="mr-1.5 h-3.5 w-3.5" /> Cancel
+                  </Button>
                 </div>
               </div>
-            )}
+            ) : (
+              /* ── Read-only details ── */
+              <>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Detail icon={Clock} label="Effort" value={`${effort} hours`} />
+                  <Detail icon={Flame} label="Impact" value={impact} />
+                  <Detail icon={User} label="Owner" value={owner} />
+                  <Detail icon={Target} label="Success Metric" value={successMetric} />
+                </div>
 
-            {/* Status label */}
-            {status !== "todo" && (
-              <Badge
-                variant="outline"
-                className={cn(
-                  "text-[10px]",
-                  status === "in_progress"
-                    ? "bg-primary/10 text-primary border-primary/20"
-                    : "bg-secondary text-secondary-foreground border-border"
+                {dependencies.length > 0 && (
+                  <div className="flex items-start gap-2 text-sm">
+                    <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <div>
+                      <span className="text-xs font-medium text-muted-foreground">Dependencies</span>
+                      <div className="mt-1 flex flex-wrap gap-1.5">
+                        {dependencies.map((dep) => (
+                          <Badge key={dep} variant="secondary" className="text-[10px]">{dep}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 )}
-              >
-                {status === "in_progress" ? "In Progress" : "Complete"}
-              </Badge>
+
+                {aiContext && (
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-primary mb-1">
+                      <Sparkles className="h-3.5 w-3.5" /> Why this matters
+                    </div>
+                    <p className="text-sm text-foreground/80 leading-relaxed">{aiContext}</p>
+                  </div>
+                )}
+
+                {estimatedROI && Object.values(estimatedROI).some(Boolean) && (
+                  <div className="rounded-lg border bg-muted/40 p-3">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-2">
+                      <TrendingUp className="h-3.5 w-3.5" /> ROI Breakdown
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2 text-sm">
+                      {estimatedROI.timeSavings && <ROIRow label="Time Savings" value={estimatedROI.timeSavings} />}
+                      {estimatedROI.riskReduction && <ROIRow label="Risk Reduction" value={estimatedROI.riskReduction} />}
+                      {estimatedROI.cost && <ROIRow label="Cost" value={estimatedROI.cost} />}
+                      {estimatedROI.payback && <ROIRow label="Payback" value={estimatedROI.payback} />}
+                    </div>
+                  </div>
+                )}
+
+                {status !== "todo" && (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-[10px]",
+                      status === "in_progress"
+                        ? "bg-primary/10 text-primary border-primary/20"
+                        : "bg-secondary text-secondary-foreground border-border"
+                    )}
+                  >
+                    {status === "in_progress" ? "In Progress" : "Complete"}
+                  </Badge>
+                )}
+              </>
             )}
           </CardContent>
         </CollapsibleContent>
@@ -210,15 +274,7 @@ export default function BacklogItem({
   );
 }
 
-function Detail({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Clock;
-  label: string;
-  value: string;
-}) {
+function Detail({ icon: Icon, label, value }: { icon: typeof Clock; label: string; value: string }) {
   return (
     <div className="flex items-start gap-2 text-sm">
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
