@@ -27,9 +27,9 @@ import {
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import BacklogItem, {
-  type BacklogItemProps,
   type BacklogItemStatus,
 } from "@/components/backlog/BacklogItem";
+import DependencyMap from "@/components/backlog/DependencyMap";
 
 /* ── types ─────────────────────────────────────────── */
 
@@ -462,10 +462,14 @@ export default function Backlog() {
 
             {/* Dependency Map */}
             <TabsContent value="dependencies" className="mt-6">
-              <div className="rounded-lg border border-dashed border-border bg-muted/30 p-12 text-center">
-                <RefreshCw className="mx-auto mb-3 h-6 w-6 text-muted-foreground" />
-                <p className="text-muted-foreground">Dependency map will be generated alongside the backlog.</p>
-              </div>
+              {!backlogData ? (
+                <div className="rounded-lg border border-dashed border-border bg-muted/30 p-12 text-center">
+                  <RefreshCw className="mx-auto mb-3 h-6 w-6 text-muted-foreground" />
+                  <p className="text-muted-foreground">Dependency map will be generated alongside the backlog.</p>
+                </div>
+              ) : (
+                <DependencyMap sprints={backlogData.sprints} />
+              )}
             </TabsContent>
           </Tabs>
         </main>
