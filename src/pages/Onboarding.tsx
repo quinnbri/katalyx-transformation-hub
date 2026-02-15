@@ -130,13 +130,10 @@ export default function Onboarding() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-10">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex items-center gap-2.5">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-primary">
-              <div className="h-2.5 w-2.5 rounded-full bg-accent" />
-            </div>
-            <span className="font-display text-xl font-bold tracking-tight">
-              <span className="text-primary">KATALY</span>
-              <span className="text-accent">X</span>
+          <div className="mx-auto mb-4 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-600 to-coral-400"></div>
+            <span className="text-2xl font-bold bg-gradient-to-br from-teal-600 to-coral-400 bg-clip-text text-transparent">
+              KATALYX
             </span>
           </div>
           <CardTitle className="text-2xl">Tell us about your organization</CardTitle>
