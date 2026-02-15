@@ -15,6 +15,7 @@ import Benchmarks from "./pages/Benchmarks";
 import Onboarding from "./pages/Onboarding";
 import BusinessContext from "./pages/BusinessContext";
 import Backlog from "./pages/Backlog";
+import SharedBacklog from "./pages/SharedBacklog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/business-context/:assessmentId" element={<ProtectedRoute><BusinessContext /></ProtectedRoute>} />
             <Route path="/backlog/:sessionId" element={<ProtectedRoute><Backlog /></ProtectedRoute>} />
+            <Route path="/shared/:token" element={<SharedBacklog />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
