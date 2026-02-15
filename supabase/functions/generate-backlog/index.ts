@@ -1,10 +1,33 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+const DomainScoresSchema = z.record(z.string(), z.number().min(0).max(5)).optional();
+
+const AssessmentScoresSchema = z.object({
+  aiReadiness: z.object({ score: z.number().min(0).max(5), domainScores: DomainScoresSchema }),
+  devops: z.object({ score: z.number().min(0).max(5), domainScores: DomainScoresSchema }),
+  operatingModel: z.object({ score: z.number().min(0).max(5), domainScores: DomainScoresSchema }),
+});
+
+const BusinessCtxSchema = z.object({
+  driver: z.string().min(1).max(200),
+  timeline: z.string().min(1).max(100),
+  budget: z.number().min(0).max(1_000_000_000),
+  constraints: z.array(z.string().max(500)).max(20),
+  additionalContext: z.string().max(2000).optional(),
+});
+
+const RequestSchema = z.object({
+  assessmentScores: AssessmentScoresSchema,
+  businessContext: BusinessCtxSchema,
+});
 
 /* ── prompt helpers (mirror of src/lib/prompts/backlog-generator.ts) ── */
 
@@ -119,10 +142,35 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { assessmentScores, businessContext } = await req.json() as {
-      assessmentScores: AssessmentScores;
-      businessContext: BusinessCtx;
-    };
+    // Auth check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Input validation
+    const body = await req.json();
+    const parseResult = RequestSchema.safeParse(body);
+    if (!parseResult.success) {
+      return new Response(JSON.stringify({ error: "Invalid input", details: parseResult.error.flatten() }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { assessmentScores, businessContext } = parseResult.data;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
@@ -187,7 +235,7 @@ serve(async (req) => {
   } catch (e) {
     console.error("generate-backlog error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: "Unable to generate backlog. Please try again." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
