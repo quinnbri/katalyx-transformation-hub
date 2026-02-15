@@ -222,6 +222,8 @@ export type Database = {
           backlog_data: Json
           created_at: string
           id: string
+          is_customized: boolean
+          original_backlog_data: Json | null
           user_id: string
         }
         Insert: {
@@ -229,6 +231,8 @@ export type Database = {
           backlog_data: Json
           created_at?: string
           id?: string
+          is_customized?: boolean
+          original_backlog_data?: Json | null
           user_id: string
         }
         Update: {
@@ -236,6 +240,8 @@ export type Database = {
           backlog_data?: Json
           created_at?: string
           id?: string
+          is_customized?: boolean
+          original_backlog_data?: Json | null
           user_id?: string
         }
         Relationships: []

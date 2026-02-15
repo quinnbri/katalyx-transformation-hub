@@ -28,6 +28,7 @@ import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import BacklogItem, {
   type BacklogItemStatus,
+  type EditableFields,
 } from "@/components/backlog/BacklogItem";
 import DependencyMap from "@/components/backlog/DependencyMap";
 
@@ -115,6 +116,9 @@ export default function Backlog() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [backlogData, setBacklogData] = useState<BacklogData | null>(null);
+  const [originalBacklogData, setOriginalBacklogData] = useState<BacklogData | null>(null);
+  const [isCustomized, setIsCustomized] = useState(false);
+  const [editedActions, setEditedActions] = useState<Set<string>>(new Set());
   const [itemStatuses, setItemStatuses] = useState<Record<string, BacklogItemStatus>>({});
   const [openSprints, setOpenSprints] = useState<Record<number, boolean>>({ 1: true });
 
@@ -133,7 +137,7 @@ export default function Backlog() {
           .limit(1),
         supabase
           .from("generated_backlogs" as any)
-          .select("backlog_data")
+          .select("backlog_data, original_backlog_data, is_customized")
           .eq("assessment_id", sessionId)
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
@@ -144,7 +148,10 @@ export default function Backlog() {
       if (scoresRes.data) setScores(scoresRes.data as AssessmentScore[]);
       if (ctxRes.data && ctxRes.data.length > 0) setBusinessCtx(ctxRes.data[0] as unknown as BusinessCtx);
       if (backlogRes.data && (backlogRes.data as any[]).length > 0) {
-        setBacklogData((backlogRes.data as any[])[0].backlog_data as BacklogData);
+        const row = (backlogRes.data as any[])[0];
+        setBacklogData(row.backlog_data as BacklogData);
+        setOriginalBacklogData((row.original_backlog_data ?? row.backlog_data) as BacklogData);
+        setIsCustomized(!!row.is_customized);
       }
       setLoading(false);
     };
@@ -200,6 +207,9 @@ export default function Backlog() {
 
       const result = data as BacklogData;
       setBacklogData(result);
+      setOriginalBacklogData(result);
+      setIsCustomized(false);
+      setEditedActions(new Set());
       setOpenSprints({ 1: true });
       setItemStatuses({});
 
@@ -208,6 +218,8 @@ export default function Backlog() {
         user_id: user.id,
         assessment_id: sessionId,
         backlog_data: result,
+        original_backlog_data: result,
+        is_customized: false,
       } as any);
 
       toast({
@@ -225,6 +237,74 @@ export default function Backlog() {
       setGenerating(false);
     }
   }, [user, sessionId, businessCtx, scores]);
+
+  /* ── edit action ── */
+  const handleEditAction = useCallback(
+    async (actionId: string, fields: EditableFields) => {
+      if (!backlogData || !user || !sessionId) return;
+
+      const updated: BacklogData = {
+        ...backlogData,
+        sprints: backlogData.sprints.map((s) => ({
+          ...s,
+          actions: s.actions.map((a) =>
+            a.id === actionId
+              ? { ...a, title: fields.title, effort: fields.effort, owner: fields.owner, successMetric: fields.successMetric }
+              : a
+          ),
+        })),
+      };
+
+      setBacklogData(updated);
+      setIsCustomized(true);
+      setEditedActions((prev) => new Set(prev).add(actionId));
+
+      // persist update (latest row)
+      const { data: rows } = await supabase
+        .from("generated_backlogs" as any)
+        .select("id")
+        .eq("assessment_id", sessionId)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (rows && (rows as any[]).length > 0) {
+        await supabase
+          .from("generated_backlogs" as any)
+          .update({ backlog_data: updated, is_customized: true } as any)
+          .eq("id", (rows as any[])[0].id);
+      }
+
+      toast({ title: "Changes saved", description: `Updated "${fields.title}"` });
+    },
+    [backlogData, user, sessionId]
+  );
+
+  /* ── revert to AI version ── */
+  const revertToOriginal = useCallback(async () => {
+    if (!originalBacklogData || !user || !sessionId) return;
+
+    setBacklogData(originalBacklogData);
+    setIsCustomized(false);
+    setEditedActions(new Set());
+
+    const { data: rows } = await supabase
+      .from("generated_backlogs" as any)
+      .select("id")
+      .eq("assessment_id", sessionId)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (rows && (rows as any[]).length > 0) {
+      await supabase
+        .from("generated_backlogs" as any)
+        .update({ backlog_data: originalBacklogData, is_customized: false } as any)
+        .eq("id", (rows as any[])[0].id);
+    }
+
+    toast({ title: "Reverted to AI version", description: "All manual edits have been removed." });
+  }, [originalBacklogData, user, sessionId]);
 
   /* ── loading state ── */
   if (loading) {
@@ -260,14 +340,21 @@ export default function Backlog() {
               <Download className="mr-1.5 h-4 w-4" /> Download PDF
             </Button>
             {backlogData ? (
-              <Button size="sm" onClick={generateBacklog} disabled={generating}>
-                {generating ? (
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="mr-1.5 h-4 w-4" />
+              <>
+                {isCustomized && (
+                  <Button size="sm" variant="outline" onClick={revertToOriginal}>
+                    <Sparkles className="mr-1.5 h-4 w-4" /> Revert to AI
+                  </Button>
                 )}
-                Regenerate
-              </Button>
+                <Button size="sm" onClick={generateBacklog} disabled={generating}>
+                  {generating ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-1.5 h-4 w-4" />
+                  )}
+                  Regenerate
+                </Button>
+              </>
             ) : (
               <Button size="sm" onClick={generateBacklog} disabled={generating}>
                 {generating ? (
@@ -418,7 +505,9 @@ export default function Backlog() {
                                     aiContext={action.aiContext}
                                     estimatedROI={action.estimatedROI}
                                     status={itemStatuses[action.id] ?? "todo"}
+                                    isCustomized={editedActions.has(action.id)}
                                     onStatusChange={(s) => handleStatusChange(action.id, s)}
+                                    onEdit={(fields) => handleEditAction(action.id, fields)}
                                   />
                                 ))}
                               </CardContent>
@@ -453,7 +542,9 @@ export default function Backlog() {
                       aiContext={action.aiContext}
                       estimatedROI={action.estimatedROI}
                       status={itemStatuses[action.id] ?? "todo"}
+                      isCustomized={editedActions.has(action.id)}
                       onStatusChange={(s) => handleStatusChange(action.id, s)}
+                      onEdit={(fields) => handleEditAction(action.id, fields)}
                     />
                   ))}
                 </div>
