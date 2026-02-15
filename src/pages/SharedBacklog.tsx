@@ -102,7 +102,10 @@ export default function SharedBacklog() {
       <header className="border-b border-border/50 bg-background/95 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-display text-lg font-bold">KATALYX</span>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-600 to-coral-400"></div>
+            <span className="text-2xl font-bold bg-gradient-to-br from-teal-600 to-coral-400 bg-clip-text text-transparent">
+              KATALYX
+            </span>
             <Badge variant="outline" className="text-[10px]">Shared View</Badge>
           </div>
           <span className="text-xs text-muted-foreground">Read-only</span>
