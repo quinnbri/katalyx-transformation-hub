@@ -8,22 +8,26 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   const location = useLocation();
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [onboardingDone, setOnboardingDone] = useState(false);
+  const userId = user?.id;
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setCheckingProfile(false);
       return;
     }
+    let cancelled = false;
     supabase
       .from("profiles")
       .select("onboarding_completed")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single()
       .then(({ data }) => {
+        if (cancelled) return;
         setOnboardingDone(!!(data as any)?.onboarding_completed);
         setCheckingProfile(false);
       });
-  }, [user]);
+    return () => { cancelled = true; };
+  }, [userId]);
 
   if (loading || checkingProfile) {
     return (
