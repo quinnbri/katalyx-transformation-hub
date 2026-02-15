@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_rate_limits: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          request_count: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          request_count?: number
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          request_count?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       assessment_questions: {
         Row: {
           created_at: string
@@ -169,6 +196,113 @@ export type Database = {
         }
         Relationships: []
       }
+      backlog_action_progress: {
+        Row: {
+          action_id: string
+          backlog_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          retrospective_notes: string | null
+          status: string
+          success_metric_achieved: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_id: string
+          backlog_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          retrospective_notes?: string | null
+          status?: string
+          success_metric_achieved?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_id?: string
+          backlog_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          retrospective_notes?: string | null
+          status?: string
+          success_metric_achieved?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backlog_action_progress_backlog_id_fkey"
+            columns: ["backlog_id"]
+            isOneToOne: false
+            referencedRelation: "generated_backlogs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      backlog_generation_log: {
+        Row: {
+          ai_model: string | null
+          assessment_id: string
+          backlog_id: string | null
+          budget_usd: number | null
+          created_at: string
+          error_message: string | null
+          generation_duration_ms: number | null
+          id: string
+          success: boolean
+          tokens_used: number | null
+          transformation_driver: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_model?: string | null
+          assessment_id: string
+          backlog_id?: string | null
+          budget_usd?: number | null
+          created_at?: string
+          error_message?: string | null
+          generation_duration_ms?: number | null
+          id?: string
+          success?: boolean
+          tokens_used?: number | null
+          transformation_driver?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_model?: string | null
+          assessment_id?: string
+          backlog_id?: string | null
+          budget_usd?: number | null
+          created_at?: string
+          error_message?: string | null
+          generation_duration_ms?: number | null
+          id?: string
+          success?: boolean
+          tokens_used?: number | null
+          transformation_driver?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backlog_generation_log_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "backlog_generation_log_backlog_id_fkey"
+            columns: ["backlog_id"]
+            isOneToOne: false
+            referencedRelation: "generated_backlogs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_context: {
         Row: {
           additional_context: string | null
@@ -244,7 +378,15 @@ export type Database = {
           original_backlog_data?: Json | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_generated_backlogs_assessment"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -337,14 +479,32 @@ export type Database = {
           share_token?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_shared_backlogs_backlog"
+            columns: ["backlog_id"]
+            isOneToOne: false
+            referencedRelation: "generated_backlogs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_sprint_progress: {
+        Args: { p_backlog_id: string; p_sprint_number: number }
+        Returns: {
+          blocked_actions: number
+          completed_actions: number
+          completion_percentage: number
+          in_progress_actions: number
+          total_actions: number
+        }[]
+      }
+      cleanup_old_rate_limits: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
