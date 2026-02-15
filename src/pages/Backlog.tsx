@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useEffect, useState, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,16 @@ import {
   DollarSign,
   Loader2,
   Sparkles,
+  Download,
 } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "@/hooks/use-toast";
+import BacklogItem, {
+  type BacklogItemProps,
+  type BacklogItemStatus,
+} from "@/components/backlog/BacklogItem";
+
+/* ── types ─────────────────────────────────────────── */
 
 interface AssessmentScore {
   framework: string;
@@ -43,6 +51,38 @@ interface Profile {
   full_name: string | null;
 }
 
+interface GeneratedAction {
+  id: string;
+  title: string;
+  effort: number;
+  impact: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  owner: string;
+  successMetric: string;
+  dependencies: string[];
+  aiContext: string;
+  estimatedROI: {
+    timeSavings: string;
+    riskReduction: string;
+    cost: string;
+    payback: string;
+  };
+}
+
+interface GeneratedSprint {
+  number: number;
+  timeline: string;
+  priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  budget: number;
+  actions: GeneratedAction[];
+}
+
+interface BacklogData {
+  sprints: GeneratedSprint[];
+  deferredActions?: GeneratedAction[];
+}
+
+/* ── constants ─────────────────────────────────────── */
+
 const frameworkLabels: Record<string, { label: string; icon: typeof Brain }> = {
   ai_readiness: { label: "AI Readiness", icon: Brain },
   devops: { label: "DevOps", icon: GitBranch },
@@ -56,41 +96,13 @@ const priorityStyles: Record<string, string> = {
   LOW: "bg-muted text-muted-foreground border-border",
 };
 
-interface Sprint {
-  id: number;
-  title: string;
-  timeline: string;
-  priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
-  budgetAllocation: string;
-  items: string[];
-}
+const quarterForSprint = (n: number) => {
+  if (n <= 2) return "Q2 2026";
+  if (n <= 4) return "Q3 2026";
+  return "Q4 2026";
+};
 
-const placeholderSprints: { quarter: string; sprints: Sprint[] }[] = [
-  {
-    quarter: "Q2 2026",
-    sprints: [
-      { id: 1, title: "Sprint 1 — Foundation", timeline: "Apr 1 – Apr 14", priority: "CRITICAL", budgetAllocation: "—", items: [] },
-      { id: 2, title: "Sprint 2 — Quick Wins", timeline: "Apr 15 – Apr 28", priority: "HIGH", budgetAllocation: "—", items: [] },
-      { id: 3, title: "Sprint 3 — Platform Prep", timeline: "Apr 29 – May 12", priority: "HIGH", budgetAllocation: "—", items: [] },
-    ],
-  },
-  {
-    quarter: "Q3 2026",
-    sprints: [
-      { id: 4, title: "Sprint 4 — Core Migration", timeline: "Jul 1 – Jul 14", priority: "HIGH", budgetAllocation: "—", items: [] },
-      { id: 5, title: "Sprint 5 — Integration", timeline: "Jul 15 – Jul 28", priority: "MEDIUM", budgetAllocation: "—", items: [] },
-      { id: 6, title: "Sprint 6 — Testing & Hardening", timeline: "Jul 29 – Aug 11", priority: "MEDIUM", budgetAllocation: "—", items: [] },
-    ],
-  },
-  {
-    quarter: "Q4 2026",
-    sprints: [
-      { id: 7, title: "Sprint 7 — Scale & Optimize", timeline: "Oct 1 – Oct 14", priority: "MEDIUM", budgetAllocation: "—", items: [] },
-      { id: 8, title: "Sprint 8 — Governance", timeline: "Oct 15 – Oct 28", priority: "LOW", budgetAllocation: "—", items: [] },
-      { id: 9, title: "Sprint 9 — Continuous Improvement", timeline: "Oct 29 – Nov 11", priority: "LOW", budgetAllocation: "—", items: [] },
-    ],
-  },
-];
+/* ── component ─────────────────────────────────────── */
 
 export default function Backlog() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -101,13 +113,17 @@ export default function Backlog() {
   const [scores, setScores] = useState<AssessmentScore[]>([]);
   const [businessCtx, setBusinessCtx] = useState<BusinessCtx | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [backlogData, setBacklogData] = useState<BacklogData | null>(null);
+  const [itemStatuses, setItemStatuses] = useState<Record<string, BacklogItemStatus>>({});
   const [openSprints, setOpenSprints] = useState<Record<number, boolean>>({ 1: true });
 
+  /* ── load data ── */
   useEffect(() => {
     if (!user || !sessionId) return;
 
     const load = async () => {
-      const [profileRes, scoresRes, ctxRes] = await Promise.all([
+      const [profileRes, scoresRes, ctxRes, backlogRes] = await Promise.all([
         supabase.from("profiles").select("company, full_name").eq("user_id", user.id).single(),
         supabase.from("assessments").select("framework, score").eq("user_id", user.id).eq("status", "completed"),
         supabase
@@ -115,26 +131,102 @@ export default function Backlog() {
           .select("transformation_driver, target_date, budget_usd, hard_constraints, additional_context")
           .eq("assessment_id", sessionId)
           .limit(1),
+        supabase
+          .from("generated_backlogs" as any)
+          .select("backlog_data")
+          .eq("assessment_id", sessionId)
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1),
       ]);
 
       if (profileRes.data) setProfile(profileRes.data as Profile);
       if (scoresRes.data) setScores(scoresRes.data as AssessmentScore[]);
       if (ctxRes.data && ctxRes.data.length > 0) setBusinessCtx(ctxRes.data[0] as unknown as BusinessCtx);
-
+      if (backlogRes.data && (backlogRes.data as any[]).length > 0) {
+        setBacklogData((backlogRes.data as any[])[0].backlog_data as BacklogData);
+      }
       setLoading(false);
     };
     load();
   }, [user, sessionId]);
 
+  /* ── helpers ── */
   const getScore = (fw: string) => {
     const found = scores.find((s) => s.framework === fw);
     return found?.score != null ? `${(found.score / 20).toFixed(1)}/5` : "—";
+  };
+
+  const getScoreNum = (fw: string): number => {
+    const found = scores.find((s) => s.framework === fw);
+    return found?.score != null ? found.score / 20 : 0;
   };
 
   const toggleSprint = (id: number) => {
     setOpenSprints((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const handleStatusChange = (actionId: string, status: BacklogItemStatus) => {
+    setItemStatuses((prev) => ({ ...prev, [actionId]: status }));
+  };
+
+  /* ── generate backlog ── */
+  const generateBacklog = useCallback(async () => {
+    if (!user || !sessionId || !businessCtx) return;
+    setGenerating(true);
+
+    try {
+      const assessmentScores = {
+        aiReadiness: { score: getScoreNum("ai_readiness") },
+        devops: { score: getScoreNum("devops") },
+        operatingModel: { score: getScoreNum("enterprise_operating_model") },
+      };
+
+      const bizCtx = {
+        driver: businessCtx.transformation_driver,
+        timeline: businessCtx.target_date
+          ? format(new Date(businessCtx.target_date), "MMM yyyy")
+          : "18 months",
+        budget: businessCtx.budget_usd ?? 500000,
+        constraints: businessCtx.hard_constraints ?? [],
+        additionalContext: businessCtx.additional_context ?? undefined,
+      };
+
+      const { data, error } = await supabase.functions.invoke("generate-backlog", {
+        body: { assessmentScores, businessContext: bizCtx },
+      });
+
+      if (error) throw error;
+
+      const result = data as BacklogData;
+      setBacklogData(result);
+      setOpenSprints({ 1: true });
+      setItemStatuses({});
+
+      // persist
+      await supabase.from("generated_backlogs" as any).insert({
+        user_id: user.id,
+        assessment_id: sessionId,
+        backlog_data: result,
+      } as any);
+
+      toast({
+        title: "Your transformation roadmap is ready!",
+        description: `Generated ${result.sprints.length} sprints with ${result.sprints.reduce((a, s) => a + s.actions.length, 0)} action items.`,
+      });
+    } catch (err: any) {
+      console.error("Generate backlog error:", err);
+      toast({
+        title: "Generation failed",
+        description: err?.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setGenerating(false);
+    }
+  }, [user, sessionId, businessCtx, scores]);
+
+  /* ── loading state ── */
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -142,6 +234,15 @@ export default function Backlog() {
       </div>
     );
   }
+
+  /* ── group sprints by quarter ── */
+  const sprintsByQuarter = backlogData
+    ? backlogData.sprints.reduce<Record<string, GeneratedSprint[]>>((acc, sprint) => {
+        const q = sprint.timeline || quarterForSprint(sprint.number);
+        (acc[q] ??= []).push(sprint);
+        return acc;
+      }, {})
+    : null;
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -154,177 +255,221 @@ export default function Backlog() {
             </Button>
             <span className="hidden sm:inline text-sm text-muted-foreground">/ Transformation Backlog</span>
           </div>
-          <Button variant="outline" size="sm" disabled>
-            <Sparkles className="mr-1.5 h-4 w-4" /> Generate Backlog
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled>
+              <Download className="mr-1.5 h-4 w-4" /> Download PDF
+            </Button>
+            {backlogData ? (
+              <Button size="sm" onClick={generateBacklog} disabled={generating}>
+                {generating ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-1.5 h-4 w-4" />
+                )}
+                Regenerate
+              </Button>
+            ) : (
+              <Button size="sm" onClick={generateBacklog} disabled={generating}>
+                {generating ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-1.5 h-4 w-4" />
+                )}
+                {generating ? "Generating…" : "Generate Backlog"}
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
-      <main className="container max-w-5xl py-8">
-        {/* ── Summary Header ────────────────────────────── */}
-        <div className="rounded-xl border bg-background p-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            {/* Left: org + scores */}
-            <div>
-              <h1 className="font-display text-2xl font-bold">
-                {profile?.company || "Your Organization"}
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">Transformation Backlog</p>
+      {/* Generating overlay */}
+      {generating && (
+        <div className="container max-w-5xl py-8">
+          <div className="flex flex-col items-center justify-center rounded-xl border bg-background p-16 text-center">
+            <Loader2 className="mb-4 h-10 w-10 animate-spin text-primary" />
+            <h2 className="font-display text-xl font-bold">AI is analyzing your assessments…</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Building a prioritized transformation roadmap based on your scores and business context.
+            </p>
+          </div>
+        </div>
+      )}
 
-              <div className="mt-4 flex flex-wrap gap-3">
-                {(["ai_readiness", "devops", "enterprise_operating_model"] as const).map((fw) => {
-                  const meta = frameworkLabels[fw];
-                  const Icon = meta.icon;
-                  return (
-                    <div
-                      key={fw}
-                      className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm"
-                    >
-                      <Icon className="h-4 w-4 text-primary" />
-                      <span className="font-medium">{meta.label}:</span>
-                      <span className="text-muted-foreground">{getScore(fw)}</span>
+      {!generating && (
+        <main className="container max-w-5xl py-8">
+          {/* Summary Header */}
+          <div className="rounded-xl border bg-background p-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h1 className="font-display text-2xl font-bold">
+                  {profile?.company || "Your Organization"}
+                </h1>
+                <p className="mt-1 text-sm text-muted-foreground">Transformation Backlog</p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  {(["ai_readiness", "devops", "enterprise_operating_model"] as const).map((fw) => {
+                    const meta = frameworkLabels[fw];
+                    const Icon = meta.icon;
+                    return (
+                      <div key={fw} className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm">
+                        <Icon className="h-4 w-4 text-primary" />
+                        <span className="font-medium">{meta.label}:</span>
+                        <span className="text-muted-foreground">{getScore(fw)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-4 text-sm">
+                {businessCtx?.target_date && (
+                  <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
+                    <CalendarDays className="h-4 w-4 text-primary" />
+                    <div>
+                      <span className="text-xs text-muted-foreground block">Deadline</span>
+                      <span className="font-medium">{format(new Date(businessCtx.target_date), "MMM d, yyyy")}</span>
                     </div>
-                  );
-                })}
+                  </div>
+                )}
+                {businessCtx?.budget_usd != null && (
+                  <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                    <div>
+                      <span className="text-xs text-muted-foreground block">Budget</span>
+                      <span className="font-medium">${businessCtx.budget_usd.toLocaleString()}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Right: timeline + budget */}
-            <div className="flex flex-wrap gap-4 text-sm">
-              {businessCtx?.target_date && (
-                <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
-                  <CalendarDays className="h-4 w-4 text-primary" />
-                  <div>
-                    <span className="text-xs text-muted-foreground block">Deadline</span>
-                    <span className="font-medium">
-                      {format(new Date(businessCtx.target_date), "MMM d, yyyy")}
-                    </span>
-                  </div>
-                </div>
-              )}
-              {businessCtx?.budget_usd != null && (
-                <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
-                  <DollarSign className="h-4 w-4 text-primary" />
-                  <div>
-                    <span className="text-xs text-muted-foreground block">Budget</span>
-                    <span className="font-medium">
-                      ${businessCtx.budget_usd.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
+            {businessCtx?.transformation_driver && (
+              <div className="mt-4 text-sm">
+                <span className="text-muted-foreground">Driver:</span>{" "}
+                <span className="font-medium">{businessCtx.transformation_driver}</span>
+              </div>
+            )}
           </div>
 
-          {businessCtx?.transformation_driver && (
-            <div className="mt-4 text-sm">
-              <span className="text-muted-foreground">Driver:</span>{" "}
-              <span className="font-medium">{businessCtx.transformation_driver}</span>
-            </div>
-          )}
-        </div>
+          {/* Tabs */}
+          <Tabs defaultValue="sprints" className="mt-8">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="sprints">90-Day Sprints</TabsTrigger>
+              <TabsTrigger value="backlog">Full Backlog</TabsTrigger>
+              <TabsTrigger value="dependencies">Dependency Map</TabsTrigger>
+            </TabsList>
 
-        {/* ── Tabs ───────────────────────────────────────── */}
-        <Tabs defaultValue="sprints" className="mt-8">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="sprints">90-Day Sprints</TabsTrigger>
-            <TabsTrigger value="backlog">Full Backlog</TabsTrigger>
-            <TabsTrigger value="dependencies">Dependency Map</TabsTrigger>
-          </TabsList>
-
-          {/* ── 90-Day Sprints ─────────────────────────── */}
-          <TabsContent value="sprints" className="mt-6 space-y-8">
-            <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4 text-center text-sm text-muted-foreground">
-              <Sparkles className="mx-auto mb-2 h-5 w-5 text-primary" />
-              Click <strong>"Generate Backlog"</strong> to create your prioritized transformation roadmap.
-            </div>
-
-            {placeholderSprints.map((quarter) => (
-              <div key={quarter.quarter}>
-                <h3 className="mb-3 font-display text-lg font-semibold">
-                  Sprints {quarter.sprints[0].id}–{quarter.sprints[quarter.sprints.length - 1].id}{" "}
-                  <span className="text-muted-foreground font-normal">({quarter.quarter})</span>
-                </h3>
-
-                <div className="space-y-3">
-                  {quarter.sprints.map((sprint) => (
-                    <Collapsible
-                      key={sprint.id}
-                      open={openSprints[sprint.id] || false}
-                      onOpenChange={() => toggleSprint(sprint.id)}
-                    >
-                      <Card className="overflow-hidden">
-                        <CollapsibleTrigger className="w-full text-left">
-                          <CardHeader className="flex flex-row items-center justify-between py-4">
-                            <div className="flex items-center gap-3">
-                              <ChevronDown
-                                className={`h-4 w-4 text-muted-foreground transition-transform ${
-                                  openSprints[sprint.id] ? "rotate-0" : "-rotate-90"
-                                }`}
-                              />
-                              <div>
-                                <CardTitle className="text-sm font-semibold">{sprint.title}</CardTitle>
-                                <p className="text-xs text-muted-foreground mt-0.5">{sprint.timeline}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <Badge
-                                variant="outline"
-                                className={`text-[10px] font-semibold ${priorityStyles[sprint.priority]}`}
-                              >
-                                {sprint.priority}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">{sprint.budgetAllocation}</span>
-                            </div>
-                          </CardHeader>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <CardContent className="border-t pt-4 pb-4">
-                            {sprint.items.length > 0 ? (
-                              <ul className="space-y-2 text-sm">
-                                {sprint.items.map((item, idx) => (
-                                  <li key={idx} className="flex items-start gap-2">
-                                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                                    {item}
-                                  </li>
+            {/* 90-Day Sprints */}
+            <TabsContent value="sprints" className="mt-6 space-y-8">
+              {!backlogData ? (
+                <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4 text-center text-sm text-muted-foreground">
+                  <Sparkles className="mx-auto mb-2 h-5 w-5 text-primary" />
+                  Click <strong>"Generate Backlog"</strong> to create your prioritized transformation roadmap.
+                </div>
+              ) : (
+                sprintsByQuarter &&
+                Object.entries(sprintsByQuarter).map(([quarter, sprints]) => (
+                  <div key={quarter}>
+                    <h3 className="mb-3 font-display text-lg font-semibold">
+                      Sprints {sprints[0].number}–{sprints[sprints.length - 1].number}{" "}
+                      <span className="text-muted-foreground font-normal">({quarter})</span>
+                    </h3>
+                    <div className="space-y-3">
+                      {sprints.map((sprint) => (
+                        <Collapsible
+                          key={sprint.number}
+                          open={openSprints[sprint.number] || false}
+                          onOpenChange={() => toggleSprint(sprint.number)}
+                        >
+                          <Card className="overflow-hidden">
+                            <CollapsibleTrigger className="w-full text-left">
+                              <CardHeader className="flex flex-row items-center justify-between py-4">
+                                <div className="flex items-center gap-3">
+                                  <ChevronDown
+                                    className={`h-4 w-4 text-muted-foreground transition-transform ${
+                                      openSprints[sprint.number] ? "rotate-0" : "-rotate-90"
+                                    }`}
+                                  />
+                                  <div>
+                                    <CardTitle className="text-sm font-semibold">
+                                      Sprint {sprint.number} — {sprint.timeline}
+                                    </CardTitle>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      {sprint.actions.length} action items · ${sprint.budget?.toLocaleString() ?? "—"}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] font-semibold ${priorityStyles[sprint.priority]}`}
+                                >
+                                  {sprint.priority}
+                                </Badge>
+                              </CardHeader>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <CardContent className="border-t pt-4 pb-4 space-y-2">
+                                {sprint.actions.map((action) => (
+                                  <BacklogItem
+                                    key={action.id}
+                                    title={action.title}
+                                    effort={action.effort}
+                                    impact={action.impact}
+                                    owner={action.owner}
+                                    successMetric={action.successMetric}
+                                    dependencies={action.dependencies}
+                                    aiContext={action.aiContext}
+                                    estimatedROI={action.estimatedROI}
+                                    status={itemStatuses[action.id] ?? "todo"}
+                                    onStatusChange={(s) => handleStatusChange(action.id, s)}
+                                  />
                                 ))}
-                              </ul>
-                            ) : (
-                              <p className="text-sm text-muted-foreground italic">
-                                Backlog items will appear here after generation.
-                              </p>
-                            )}
-                          </CardContent>
-                        </CollapsibleContent>
-                      </Card>
-                    </Collapsible>
+                              </CardContent>
+                            </CollapsibleContent>
+                          </Card>
+                        </Collapsible>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </TabsContent>
+
+            {/* Full Backlog */}
+            <TabsContent value="backlog" className="mt-6">
+              {!backlogData ? (
+                <div className="rounded-lg border border-dashed border-border bg-muted/30 p-12 text-center">
+                  <RefreshCw className="mx-auto mb-3 h-6 w-6 text-muted-foreground" />
+                  <p className="text-muted-foreground">Full backlog view will be populated after AI generation.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {backlogData.sprints.flatMap((s) => s.actions).map((action) => (
+                    <BacklogItem
+                      key={action.id}
+                      title={action.title}
+                      effort={action.effort}
+                      impact={action.impact}
+                      owner={action.owner}
+                      successMetric={action.successMetric}
+                      dependencies={action.dependencies}
+                      aiContext={action.aiContext}
+                      estimatedROI={action.estimatedROI}
+                      status={itemStatuses[action.id] ?? "todo"}
+                      onStatusChange={(s) => handleStatusChange(action.id, s)}
+                    />
                   ))}
                 </div>
+              )}
+            </TabsContent>
+
+            {/* Dependency Map */}
+            <TabsContent value="dependencies" className="mt-6">
+              <div className="rounded-lg border border-dashed border-border bg-muted/30 p-12 text-center">
+                <RefreshCw className="mx-auto mb-3 h-6 w-6 text-muted-foreground" />
+                <p className="text-muted-foreground">Dependency map will be generated alongside the backlog.</p>
               </div>
-            ))}
-          </TabsContent>
-
-          {/* ── Full Backlog ───────────────────────────── */}
-          <TabsContent value="backlog" className="mt-6">
-            <div className="rounded-lg border border-dashed border-border bg-muted/30 p-12 text-center">
-              <RefreshCw className="mx-auto mb-3 h-6 w-6 text-muted-foreground" />
-              <p className="text-muted-foreground">
-                Full backlog view will be populated after AI generation.
-              </p>
-            </div>
-          </TabsContent>
-
-          {/* ── Dependency Map ─────────────────────────── */}
-          <TabsContent value="dependencies" className="mt-6">
-            <div className="rounded-lg border border-dashed border-border bg-muted/30 p-12 text-center">
-              <RefreshCw className="mx-auto mb-3 h-6 w-6 text-muted-foreground" />
-              <p className="text-muted-foreground">
-                Dependency map will be generated alongside the backlog.
-              </p>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </main>
+            </TabsContent>
+          </Tabs>
+        </main>
+      )}
     </div>
   );
 }

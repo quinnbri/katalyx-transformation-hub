@@ -216,6 +216,30 @@ export type Database = {
           },
         ]
       }
+      generated_backlogs: {
+        Row: {
+          assessment_id: string
+          backlog_data: Json
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          assessment_id: string
+          backlog_data: Json
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          assessment_id?: string
+          backlog_data?: Json
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           annual_revenue: string | null
