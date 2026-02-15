@@ -300,6 +300,45 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_backlogs: {
+        Row: {
+          backlog_data: Json
+          backlog_id: string
+          business_context: Json | null
+          company_name: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          scores: Json | null
+          share_token: string
+          user_id: string
+        }
+        Insert: {
+          backlog_data: Json
+          backlog_id: string
+          business_context?: Json | null
+          company_name?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          scores?: Json | null
+          share_token?: string
+          user_id: string
+        }
+        Update: {
+          backlog_data?: Json
+          backlog_id?: string
+          business_context?: Json | null
+          company_name?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          scores?: Json | null
+          share_token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

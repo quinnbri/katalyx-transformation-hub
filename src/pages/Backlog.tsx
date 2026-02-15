@@ -23,14 +23,25 @@ import {
   Loader2,
   Sparkles,
   Download,
+  FileSpreadsheet,
+  FileText,
+  Link2,
+  Share2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import BacklogItem, {
   type BacklogItemStatus,
   type EditableFields,
 } from "@/components/backlog/BacklogItem";
 import DependencyMap from "@/components/backlog/DependencyMap";
+import { exportToJiraCsv, exportToPdf } from "@/lib/export-backlog";
 
 /* ── types ─────────────────────────────────────────── */
 
@@ -306,6 +317,81 @@ export default function Backlog() {
     toast({ title: "Reverted to AI version", description: "All manual edits have been removed." });
   }, [originalBacklogData, user, sessionId]);
 
+  /* ── export handlers ── */
+  const companyName = profile?.company || "Organization";
+
+  const handleExportCsv = useCallback(() => {
+    if (!backlogData) return;
+    exportToJiraCsv(backlogData, companyName);
+    toast({ title: "CSV exported", description: "Import it into Jira via CSV import." });
+  }, [backlogData, companyName]);
+
+  const handleExportPdf = useCallback(() => {
+    if (!backlogData) return;
+    const scoreList = (["ai_readiness", "devops", "enterprise_operating_model"] as const).map((fw) => ({
+      label: frameworkLabels[fw].label,
+      value: getScore(fw),
+    }));
+    const bizCtx = businessCtx
+      ? {
+          driver: businessCtx.transformation_driver,
+          timeline: businessCtx.target_date
+            ? format(new Date(businessCtx.target_date), "MMM d, yyyy")
+            : "—",
+          budget: businessCtx.budget_usd != null ? `$${businessCtx.budget_usd.toLocaleString()}` : "—",
+        }
+      : undefined;
+    exportToPdf(backlogData, companyName, scoreList, bizCtx);
+    toast({ title: "PDF downloaded" });
+  }, [backlogData, companyName, businessCtx, scores]);
+
+  const handleShareLink = useCallback(async () => {
+    if (!backlogData || !user || !sessionId) return;
+
+    // Check for existing share
+    const { data: existing } = await supabase
+      .from("shared_backlogs" as any)
+      .select("share_token")
+      .eq("user_id", user.id)
+      .eq("backlog_id", sessionId)
+      .limit(1);
+
+    if (existing && (existing as any[]).length > 0) {
+      const url = `${window.location.origin}/shared/${(existing as any[])[0].share_token}`;
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Link copied!", description: "The share link has been copied to your clipboard." });
+      return;
+    }
+
+    const { data: inserted, error } = await supabase
+      .from("shared_backlogs" as any)
+      .insert({
+        backlog_id: sessionId,
+        user_id: user.id,
+        company_name: companyName,
+        backlog_data: backlogData,
+        scores: Object.fromEntries(scores.map((s) => [s.framework, s.score])),
+        business_context: businessCtx
+          ? {
+              driver: businessCtx.transformation_driver,
+              timeline: businessCtx.target_date,
+              budget: businessCtx.budget_usd,
+            }
+          : null,
+      } as any)
+      .select("share_token")
+      .single();
+
+    if (error || !inserted) {
+      toast({ title: "Failed to create share link", variant: "destructive" });
+      return;
+    }
+
+    const url = `${window.location.origin}/shared/${(inserted as any).share_token}`;
+    await navigator.clipboard.writeText(url);
+    toast({ title: "Link copied!", description: "Share this read-only link with your leadership team." });
+  }, [backlogData, user, sessionId, companyName, scores, businessCtx]);
+
   /* ── loading state ── */
   if (loading) {
     return (
@@ -336,9 +422,26 @@ export default function Backlog() {
             <span className="hidden sm:inline text-sm text-muted-foreground">/ Transformation Backlog</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled>
-              <Download className="mr-1.5 h-4 w-4" /> Download PDF
-            </Button>
+            {backlogData && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Share2 className="mr-1.5 h-4 w-4" /> Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem onClick={handleExportCsv}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" /> Export to Jira (CSV)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportPdf}>
+                    <FileText className="mr-2 h-4 w-4" /> Export to PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleShareLink}>
+                    <Link2 className="mr-2 h-4 w-4" /> Copy Share Link
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             {backlogData ? (
               <>
                 {isCustomized && (
