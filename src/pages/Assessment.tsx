@@ -16,6 +16,8 @@ interface Question {
   domain: string;
   question_text: string;
   question_type: string;
+  question_format: string;
+  scenario_context: string | null;
   options: { min: number; max: number; labels: string[]; descriptions?: string[] };
   sort_order: number;
 }
@@ -63,7 +65,6 @@ export default function Assessment() {
     if (!framework || !user) return;
 
     const init = async () => {
-      // Fetch questions
       const { data: qs } = await supabase
         .from("assessment_questions")
         .select("*")
@@ -71,7 +72,6 @@ export default function Assessment() {
         .order("sort_order");
       setQuestions((qs as unknown as Question[]) || []);
 
-      // Find or create assessment
       const { data: existing } = await supabase
         .from("assessments")
         .select("id")
@@ -93,7 +93,6 @@ export default function Assessment() {
       }
       setAssessmentId(aId);
 
-      // Load saved responses
       const { data: saved } = await supabase
         .from("assessment_responses")
         .select("question_id, response_value")
@@ -125,7 +124,6 @@ export default function Assessment() {
     setSubmitting(true);
 
     try {
-      // Build responses payload for AI
       const responsePayload = questions.map((q) => ({
         domain: q.domain,
         question: q.question_text,
@@ -139,7 +137,6 @@ export default function Assessment() {
 
       if (error) throw error;
 
-      // Save results
       await supabase.from("assessment_results").insert({
         assessment_id: assessmentId,
         user_id: user.id,
@@ -149,7 +146,6 @@ export default function Assessment() {
         ai_summary: data.summary,
       });
 
-      // Mark assessment complete
       await supabase
         .from("assessments")
         .update({ status: "completed", score: data.overall_score, completed_at: new Date().toISOString() })
@@ -213,46 +209,75 @@ export default function Assessment() {
 
         {/* Questions */}
         <div className="mt-6 space-y-6">
-          {currentQuestions.map((q, idx) => (
-            <Card key={q.id}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium">
-                  {idx + 1}. {q.question_text}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RadioGroup
-                  value={responses[q.id] || ""}
-                  onValueChange={(val) => saveResponse(q.id, val)}
-                  className="space-y-2"
-                >
-                  {q.options?.labels?.map((label, i) => {
-                    const level = i + 1;
-                    const isSelected = responses[q.id] === String(level);
-                    return (
-                      <div
-                        key={i}
-                        className={`flex items-center space-x-3 rounded-lg border p-3 transition-all cursor-pointer ${
-                          isSelected
-                            ? `${scaleColors[level]} shadow-sm`
-                            : "hover:bg-muted/50 border-border"
-                        }`}
-                        onClick={() => saveResponse(q.id, String(level))}
-                      >
-                        <RadioGroupItem value={String(level)} id={`${q.id}-${i}`} className="mt-0.5 shrink-0" />
-                        <Label htmlFor={`${q.id}-${i}`} className="flex-1 cursor-pointer">
-                          <span className="text-sm font-medium">{label}</span>
-                          {q.options?.descriptions?.[i] && (
-                            <span className="block text-xs text-muted-foreground mt-0.5">{q.options.descriptions[i]}</span>
-                          )}
-                        </Label>
-                      </div>
-                    );
-                  })}
-                </RadioGroup>
-              </CardContent>
-            </Card>
-          ))}
+          {currentQuestions.map((q, idx) => {
+            const isScenario = q.question_format === "scenario" && q.scenario_context;
+
+            return (
+              <Card key={q.id}>
+                <CardHeader className="pb-3">
+                  {isScenario ? (
+                    <div className="space-y-2">
+                      <p className="text-sm leading-relaxed text-foreground/80 italic border-l-2 border-primary/30 pl-3">
+                        {q.scenario_context}
+                      </p>
+                      <CardTitle className="text-base font-medium pt-1">
+                        {idx + 1}. {q.question_text}
+                      </CardTitle>
+                    </div>
+                  ) : (
+                    <CardTitle className="text-base font-medium">
+                      {idx + 1}. {q.question_text}
+                    </CardTitle>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <RadioGroup
+                    value={responses[q.id] || ""}
+                    onValueChange={(val) => saveResponse(q.id, val)}
+                    className="space-y-2"
+                  >
+                    {q.options?.labels?.map((label, i) => {
+                      const level = i + 1;
+                      const isSelected = responses[q.id] === String(level);
+                      return (
+                        <div
+                          key={i}
+                          className={`flex items-start space-x-3 rounded-lg border p-3 transition-all cursor-pointer ${
+                            isSelected
+                              ? `${scaleColors[level]} shadow-sm`
+                              : "hover:bg-muted/50 border-border"
+                          }`}
+                          onClick={() => saveResponse(q.id, String(level))}
+                        >
+                          <RadioGroupItem value={String(level)} id={`${q.id}-${i}`} className="mt-1 shrink-0" />
+                          <Label htmlFor={`${q.id}-${i}`} className="flex-1 cursor-pointer">
+                            {isScenario ? (
+                              /* Scenario: descriptions are primary, labels are secondary */
+                              <div>
+                                <span className="text-sm leading-relaxed">
+                                  {q.options?.descriptions?.[i] || label}
+                                </span>
+                              </div>
+                            ) : (
+                              /* Direct: labels primary, descriptions secondary */
+                              <div>
+                                <span className="text-sm font-medium">{label}</span>
+                                {q.options?.descriptions?.[i] && (
+                                  <span className="block text-xs text-muted-foreground mt-0.5">
+                                    {q.options.descriptions[i]}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </RadioGroup>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Navigation */}
