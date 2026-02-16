@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Eye } from "lucide-react";
+import { ArrowRight, Eye, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ResponsiveContainer, Legend,
@@ -115,19 +115,30 @@ export default function FrameworkCard({ fw, assessments, inProgress }: Props) {
         )}
 
         {/* Latest score banner */}
-        {latest && (
-          <div className="rounded-md bg-primary/5 p-3 text-sm flex items-center justify-between">
-            <div>
-              <span className="font-medium text-primary">Score: {latest.score}%</span>
-              <span className="ml-2 text-muted-foreground">
-                · {new Date(latest.completed_at!).toLocaleDateString()}
-              </span>
+        {latest && (() => {
+          const diff = previous ? latest.score! - previous.score! : null;
+          return (
+            <div className="rounded-md bg-primary/5 p-3 text-sm flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-primary">Score: {latest.score}%</span>
+                {diff !== null && (
+                  <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${
+                    diff > 0 ? "text-green-600" : diff < 0 ? "text-destructive" : "text-muted-foreground"
+                  }`}>
+                    {diff > 0 ? <TrendingUp className="h-3 w-3" /> : diff < 0 ? <TrendingDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+                    {diff > 0 ? "+" : ""}{diff}%
+                  </span>
+                )}
+                <span className="text-muted-foreground">
+                  · {new Date(latest.completed_at!).toLocaleDateString()}
+                </span>
+              </div>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" asChild>
+                <Link to={`/results/${latest.id}`}><Eye className="mr-1 h-3 w-3" /> View</Link>
+              </Button>
             </div>
-            <Button variant="ghost" size="sm" className="h-7 text-xs" asChild>
-              <Link to={`/results/${latest.id}`}><Eye className="mr-1 h-3 w-3" /> View</Link>
-            </Button>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Past 3 assessments */}
         {completed.length > 1 && (
