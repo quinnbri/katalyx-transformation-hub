@@ -2,13 +2,18 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   ChevronDown,
   Clock,
@@ -21,10 +26,15 @@ import {
   Pencil,
   Check,
   X,
+  Circle,
+  PlayCircle,
+  AlertTriangle,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { ActionStatus } from "./SprintProgress";
 
-export type BacklogItemStatus = "todo" | "in_progress" | "complete";
+export type BacklogItemStatus = ActionStatus;
 
 export interface BacklogItemROI {
   timeSavings?: string;
@@ -51,8 +61,11 @@ export interface BacklogItemProps {
   estimatedROI?: BacklogItemROI;
   status?: BacklogItemStatus;
   isCustomized?: boolean;
+  successMetricAchieved?: string | null;
+  retrospectiveNotes?: string | null;
   onStatusChange?: (status: BacklogItemStatus) => void;
   onEdit?: (fields: EditableFields) => void;
+  onMarkComplete?: () => void;
 }
 
 const impactStyles: Record<string, string> = {
@@ -62,7 +75,12 @@ const impactStyles: Record<string, string> = {
   LOW: "bg-muted text-muted-foreground border-border",
 };
 
-const statusCycle: BacklogItemStatus[] = ["todo", "in_progress", "complete"];
+const statusConfig: Record<ActionStatus, { label: string; icon: typeof Circle; className: string }> = {
+  not_started: { label: "Not Started", icon: Circle, className: "text-muted-foreground" },
+  in_progress: { label: "In Progress", icon: PlayCircle, className: "text-primary" },
+  blocked: { label: "Blocked", icon: AlertTriangle, className: "text-destructive" },
+  complete: { label: "Complete", icon: CheckCircle2, className: "text-green-600" },
+};
 
 export default function BacklogItem({
   title,
@@ -73,19 +91,24 @@ export default function BacklogItem({
   dependencies = [],
   aiContext,
   estimatedROI,
-  status = "todo",
+  status = "not_started",
   isCustomized,
+  successMetricAchieved,
+  retrospectiveNotes,
   onStatusChange,
   onEdit,
+  onMarkComplete,
 }: BacklogItemProps) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<EditableFields>({ title, effort, owner, successMetric });
 
-  const cycleStatus = () => {
-    const idx = statusCycle.indexOf(status);
-    const next = statusCycle[(idx + 1) % statusCycle.length];
-    onStatusChange?.(next);
+  const handleStatusSelect = (newStatus: ActionStatus) => {
+    if (newStatus === "complete" && onMarkComplete) {
+      onMarkComplete();
+    } else {
+      onStatusChange?.(newStatus);
+    }
   };
 
   const startEdit = (e: React.MouseEvent) => {
@@ -96,27 +119,39 @@ export default function BacklogItem({
   };
 
   const cancelEdit = () => setEditing(false);
-
   const saveEdit = () => {
     onEdit?.(draft);
     setEditing(false);
   };
 
-  const checked = status === "complete";
-  const indeterminate = status === "in_progress";
+  const current = statusConfig[status];
+  const StatusIcon = current.icon;
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <Card className={cn("transition-all", status === "complete" && "opacity-60")}>
-        {/* Collapsed row */}
         <CardHeader className="p-0">
           <div className="flex items-center gap-3 px-4 py-3">
-            <Checkbox
-              checked={indeterminate ? "indeterminate" : checked}
-              onCheckedChange={cycleStatus}
-              aria-label={`Mark "${title}" status`}
-              className="shrink-0"
-            />
+            {/* Status dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className={cn("shrink-0 focus:outline-none", current.className)} aria-label="Change status">
+                  <StatusIcon className="h-5 w-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-40">
+                {(Object.keys(statusConfig) as ActionStatus[]).map((s) => {
+                  const cfg = statusConfig[s];
+                  const Icon = cfg.icon;
+                  return (
+                    <DropdownMenuItem key={s} onClick={() => handleStatusSelect(s)} className={cn(s === status && "bg-accent")}>
+                      <Icon className={cn("mr-2 h-4 w-4", cfg.className)} />
+                      {cfg.label}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <CollapsibleTrigger className="flex flex-1 items-center gap-3 text-left min-w-0">
               <ChevronDown
@@ -139,7 +174,6 @@ export default function BacklogItem({
               )}
             </CollapsibleTrigger>
 
-            {/* Meta chips + edit button */}
             <div className="flex items-center gap-2 shrink-0">
               {isCustomized && (
                 <Badge variant="outline" className="text-[10px] bg-accent/50 text-accent-foreground border-accent">
@@ -162,11 +196,9 @@ export default function BacklogItem({
           </div>
         </CardHeader>
 
-        {/* Expanded details */}
         <CollapsibleContent>
           <CardContent className="border-t px-4 pt-4 pb-4 space-y-4">
             {editing ? (
-              /* ── Edit form ── */
               <div className="space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
@@ -206,7 +238,6 @@ export default function BacklogItem({
                 </div>
               </div>
             ) : (
-              /* ── Read-only details ── */
               <>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Detail icon={Clock} label="Effort" value={`${effort} hours`} />
@@ -252,17 +283,32 @@ export default function BacklogItem({
                   </div>
                 )}
 
-                {status !== "todo" && (
+                {/* Completion badge & retrospective */}
+                {status === "complete" && successMetricAchieved && (
+                  <div className={cn(
+                    "rounded-lg border p-3 text-sm",
+                    successMetricAchieved === "yes" ? "border-green-500/20 bg-green-500/5" :
+                    successMetricAchieved === "partially" ? "border-yellow-500/20 bg-yellow-500/5" :
+                    "border-destructive/20 bg-destructive/5"
+                  )}>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold mb-1">
+                      {successMetricAchieved === "yes" ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> :
+                       successMetricAchieved === "partially" ? <AlertTriangle className="h-3.5 w-3.5 text-yellow-600" /> :
+                       <X className="h-3.5 w-3.5 text-destructive" />}
+                      Success Metric: {successMetricAchieved === "yes" ? "Achieved" : successMetricAchieved === "partially" ? "Partially Achieved" : "Not Achieved"}
+                    </div>
+                    {retrospectiveNotes && (
+                      <p className="text-muted-foreground mt-1">{retrospectiveNotes}</p>
+                    )}
+                  </div>
+                )}
+
+                {status !== "not_started" && (
                   <Badge
                     variant="outline"
-                    className={cn(
-                      "text-[10px]",
-                      status === "in_progress"
-                        ? "bg-primary/10 text-primary border-primary/20"
-                        : "bg-secondary text-secondary-foreground border-border"
-                    )}
+                    className={cn("text-[10px]", current.className, "border-current/20")}
                   >
-                    {status === "in_progress" ? "In Progress" : "Complete"}
+                    {current.label}
                   </Badge>
                 )}
               </>

@@ -22,7 +22,6 @@ import {
   DollarSign,
   Loader2,
   Sparkles,
-  Download,
   FileSpreadsheet,
   FileText,
   Link2,
@@ -41,6 +40,8 @@ import BacklogItem, {
   type EditableFields,
 } from "@/components/backlog/BacklogItem";
 import DependencyMap from "@/components/backlog/DependencyMap";
+import SprintProgress, { type ActionStatus } from "@/components/backlog/SprintProgress";
+import CompletionDialog, { type CompletionResult } from "@/components/backlog/CompletionDialog";
 import { exportToJiraCsv, exportToPdf } from "@/lib/export-backlog";
 
 /* ── types ─────────────────────────────────────────── */
@@ -93,6 +94,13 @@ interface BacklogData {
   deferredActions?: GeneratedAction[];
 }
 
+interface ProgressRecord {
+  action_id: string;
+  status: ActionStatus;
+  success_metric_achieved: string | null;
+  retrospective_notes: string | null;
+}
+
 /* ── constants ─────────────────────────────────────── */
 
 const frameworkLabels: Record<string, { label: string; icon: typeof Brain }> = {
@@ -130,8 +138,13 @@ export default function Backlog() {
   const [originalBacklogData, setOriginalBacklogData] = useState<BacklogData | null>(null);
   const [isCustomized, setIsCustomized] = useState(false);
   const [editedActions, setEditedActions] = useState<Set<string>>(new Set());
-  const [itemStatuses, setItemStatuses] = useState<Record<string, BacklogItemStatus>>({});
+  const [itemStatuses, setItemStatuses] = useState<Record<string, ActionStatus>>({});
+  const [completionData, setCompletionData] = useState<Record<string, { achieved: string | null; notes: string | null }>>({});
   const [openSprints, setOpenSprints] = useState<Record<number, boolean>>({ 1: true });
+  const [backlogId, setBacklogId] = useState<string | null>(null);
+
+  // Completion dialog state
+  const [completionTarget, setCompletionTarget] = useState<{ actionId: string; metric: string } | null>(null);
 
   /* ── load data ── */
   useEffect(() => {
@@ -148,7 +161,7 @@ export default function Backlog() {
           .limit(1),
         supabase
           .from("generated_backlogs" as any)
-          .select("backlog_data, original_backlog_data, is_customized")
+          .select("id, backlog_data, original_backlog_data, is_customized")
           .eq("assessment_id", sessionId)
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
@@ -163,6 +176,25 @@ export default function Backlog() {
         setBacklogData(row.backlog_data as BacklogData);
         setOriginalBacklogData((row.original_backlog_data ?? row.backlog_data) as BacklogData);
         setIsCustomized(!!row.is_customized);
+        setBacklogId(row.id);
+
+        // Load progress records
+        const { data: progressRows } = await supabase
+          .from("backlog_action_progress")
+          .select("action_id, status, success_metric_achieved, retrospective_notes")
+          .eq("backlog_id", row.id)
+          .eq("user_id", user.id);
+
+        if (progressRows) {
+          const statuses: Record<string, ActionStatus> = {};
+          const completion: Record<string, { achieved: string | null; notes: string | null }> = {};
+          for (const r of progressRows as ProgressRecord[]) {
+            statuses[r.action_id] = r.status;
+            completion[r.action_id] = { achieved: r.success_metric_achieved, notes: r.retrospective_notes };
+          }
+          setItemStatuses(statuses);
+          setCompletionData(completion);
+        }
       }
       setLoading(false);
     };
@@ -184,9 +216,61 @@ export default function Backlog() {
     setOpenSprints((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleStatusChange = (actionId: string, status: BacklogItemStatus) => {
+  /* ── persist status change ── */
+  const persistProgress = useCallback(async (actionId: string, status: ActionStatus, achieved?: string | null, notes?: string | null) => {
+    if (!user || !backlogId) return;
+
+    const { data: existing } = await supabase
+      .from("backlog_action_progress")
+      .select("id")
+      .eq("backlog_id", backlogId)
+      .eq("action_id", actionId)
+      .eq("user_id", user.id)
+      .limit(1);
+
+    const payload: any = {
+      status,
+      updated_at: new Date().toISOString(),
+      ...(status === "complete" ? { completed_at: new Date().toISOString() } : { completed_at: null }),
+      ...(achieved !== undefined ? { success_metric_achieved: achieved } : {}),
+      ...(notes !== undefined ? { retrospective_notes: notes } : {}),
+    };
+
+    if (existing && (existing as any[]).length > 0) {
+      await supabase
+        .from("backlog_action_progress")
+        .update(payload)
+        .eq("id", (existing as any[])[0].id);
+    } else {
+      await supabase
+        .from("backlog_action_progress")
+        .insert({
+          backlog_id: backlogId,
+          action_id: actionId,
+          user_id: user.id,
+          ...payload,
+        });
+    }
+  }, [user, backlogId]);
+
+  const handleStatusChange = useCallback((actionId: string, status: ActionStatus) => {
     setItemStatuses((prev) => ({ ...prev, [actionId]: status }));
-  };
+    persistProgress(actionId, status);
+  }, [persistProgress]);
+
+  const handleMarkComplete = useCallback((actionId: string, metric: string) => {
+    setCompletionTarget({ actionId, metric });
+  }, []);
+
+  const handleCompletionConfirm = useCallback((result: CompletionResult) => {
+    if (!completionTarget) return;
+    const { actionId } = completionTarget;
+    setItemStatuses((prev) => ({ ...prev, [actionId]: "complete" }));
+    setCompletionData((prev) => ({ ...prev, [actionId]: { achieved: result.achieved, notes: result.retrospectiveNotes || null } }));
+    persistProgress(actionId, "complete", result.achieved, result.retrospectiveNotes || null);
+    setCompletionTarget(null);
+    toast({ title: "Action marked complete", description: `Success metric: ${result.achieved}` });
+  }, [completionTarget, persistProgress]);
 
   /* ── generate backlog ── */
   const generateBacklog = useCallback(async () => {
@@ -223,15 +307,18 @@ export default function Backlog() {
       setEditedActions(new Set());
       setOpenSprints({ 1: true });
       setItemStatuses({});
+      setCompletionData({});
 
       // persist
-      await supabase.from("generated_backlogs" as any).insert({
+      const { data: inserted } = await supabase.from("generated_backlogs" as any).insert({
         user_id: user.id,
         assessment_id: sessionId,
         backlog_data: result,
         original_backlog_data: result,
         is_customized: false,
-      } as any);
+      } as any).select("id").single();
+
+      if (inserted) setBacklogId((inserted as any).id);
 
       toast({
         title: "Your transformation roadmap is ready!",
@@ -270,7 +357,6 @@ export default function Backlog() {
       setIsCustomized(true);
       setEditedActions((prev) => new Set(prev).add(actionId));
 
-      // persist update (latest row)
       const { data: rows } = await supabase
         .from("generated_backlogs" as any)
         .select("id")
@@ -348,7 +434,6 @@ export default function Backlog() {
   const handleShareLink = useCallback(async () => {
     if (!backlogData || !user || !sessionId) return;
 
-    // Check for existing share
     const { data: existing } = await supabase
       .from("shared_backlogs" as any)
       .select("share_token")
@@ -536,6 +621,24 @@ export default function Backlog() {
                 <span className="font-medium">{businessCtx.transformation_driver}</span>
               </div>
             )}
+
+            {/* Overall sprint progress summary */}
+            {backlogData && backlogData.sprints.length > 0 && (
+              <div className="mt-5 pt-4 border-t space-y-1.5">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Execution Progress</h3>
+                <div className="flex flex-wrap gap-x-6 gap-y-1.5">
+                  {backlogData.sprints.map((sprint) => (
+                    <SprintProgress
+                      key={sprint.number}
+                      sprintNumber={sprint.number}
+                      actionIds={sprint.actions.map((a) => a.id)}
+                      statuses={itemStatuses}
+                      compact
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Tabs */}
@@ -595,6 +698,12 @@ export default function Backlog() {
                               </CardHeader>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
+                              {/* Sprint progress bar */}
+                              <SprintProgress
+                                sprintNumber={sprint.number}
+                                actionIds={sprint.actions.map((a) => a.id)}
+                                statuses={itemStatuses}
+                              />
                               <CardContent className="border-t pt-4 pb-4 space-y-2">
                                 {sprint.actions.map((action) => (
                                   <BacklogItem
@@ -607,9 +716,12 @@ export default function Backlog() {
                                     dependencies={action.dependencies}
                                     aiContext={action.aiContext}
                                     estimatedROI={action.estimatedROI}
-                                    status={itemStatuses[action.id] ?? "todo"}
+                                    status={itemStatuses[action.id] ?? "not_started"}
                                     isCustomized={editedActions.has(action.id)}
+                                    successMetricAchieved={completionData[action.id]?.achieved ?? null}
+                                    retrospectiveNotes={completionData[action.id]?.notes ?? null}
                                     onStatusChange={(s) => handleStatusChange(action.id, s)}
+                                    onMarkComplete={() => handleMarkComplete(action.id, action.successMetric)}
                                     onEdit={(fields) => handleEditAction(action.id, fields)}
                                   />
                                 ))}
@@ -644,9 +756,12 @@ export default function Backlog() {
                       dependencies={action.dependencies}
                       aiContext={action.aiContext}
                       estimatedROI={action.estimatedROI}
-                      status={itemStatuses[action.id] ?? "todo"}
+                      status={itemStatuses[action.id] ?? "not_started"}
                       isCustomized={editedActions.has(action.id)}
+                      successMetricAchieved={completionData[action.id]?.achieved ?? null}
+                      retrospectiveNotes={completionData[action.id]?.notes ?? null}
                       onStatusChange={(s) => handleStatusChange(action.id, s)}
+                      onMarkComplete={() => handleMarkComplete(action.id, action.successMetric)}
                       onEdit={(fields) => handleEditAction(action.id, fields)}
                     />
                   ))}
@@ -668,6 +783,14 @@ export default function Backlog() {
           </Tabs>
         </main>
       )}
+
+      {/* Completion dialog */}
+      <CompletionDialog
+        open={!!completionTarget}
+        onOpenChange={(open) => !open && setCompletionTarget(null)}
+        successMetric={completionTarget?.metric ?? ""}
+        onConfirm={handleCompletionConfirm}
+      />
     </div>
   );
 }
