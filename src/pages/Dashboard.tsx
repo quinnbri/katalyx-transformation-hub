@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, GitBranch, Building2, ArrowRight, LogOut, Eye, BarChart3 } from "lucide-react";
+import { Brain, GitBranch, Building2, LogOut, BarChart3, Eye } from "lucide-react";
+import FrameworkCard from "@/components/dashboard/FrameworkCard";
 
 const frameworks = [
   {
@@ -39,27 +39,40 @@ const frameworks = [
   },
 ];
 
-interface Assessment {
+interface AssessmentWithResult {
   id: string;
   framework: string;
   status: string;
   score: number | null;
   started_at: string;
   completed_at: string | null;
+  domain_scores?: Record<string, any> | null;
 }
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
-  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [assessments, setAssessments] = useState<AssessmentWithResult[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAssessments = async () => {
+      // Fetch assessments with their results (domain_scores)
       const { data } = await supabase
         .from("assessments")
-        .select("*")
+        .select("id, framework, status, score, started_at, completed_at, assessment_results(domain_scores)")
         .order("created_at", { ascending: false });
-      setAssessments((data as Assessment[]) || []);
+
+      const mapped: AssessmentWithResult[] = (data || []).map((a: any) => ({
+        id: a.id,
+        framework: a.framework,
+        status: a.status,
+        score: a.score,
+        started_at: a.started_at,
+        completed_at: a.completed_at,
+        domain_scores: a.assessment_results?.[0]?.domain_scores ?? null,
+      }));
+
+      setAssessments(mapped);
       setLoading(false);
     };
     fetchAssessments();
@@ -103,60 +116,20 @@ export default function Dashboard() {
         <div className="grid gap-6 md:grid-cols-3">
           {frameworks.map((fw) => {
             const fwAssessments = getFrameworkAssessments(fw.id);
-            const latestCompleted = fwAssessments.find((a) => a.status === "completed");
             const inProgress = fwAssessments.find((a) => a.status === "in_progress");
 
             return (
-              <Card key={fw.id} className="flex flex-col transition-shadow hover:shadow-md">
-                <CardHeader>
-                  <div className={`mb-3 inline-flex h-12 w-12 items-center justify-center rounded-lg ${fw.bgColor}`}>
-                    <fw.icon className={`h-6 w-6 ${fw.color}`} />
-                  </div>
-                  <CardTitle className="text-lg">{fw.title}</CardTitle>
-                  <CardDescription className="text-sm">{fw.description}</CardDescription>
-                  <p className="text-xs text-muted-foreground/70 mt-1">{fw.details}</p>
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {fw.domains.map((d) => (
-                      <span key={d} className="inline-flex rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                        {d}
-                      </span>
-                    ))}
-                  </div>
-                </CardHeader>
-                <CardContent className="mt-auto space-y-3">
-                  {latestCompleted && (
-                    <div className="rounded-md bg-primary/5 p-3 text-sm flex items-center justify-between">
-                      <div>
-                        <span className="font-medium text-primary">Score: {latestCompleted.score ?? "—"}%</span>
-                        <span className="ml-2 text-muted-foreground">
-                          · {new Date(latestCompleted.completed_at!).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <Button variant="ghost" size="sm" className="h-7 text-xs" asChild>
-                        <Link to={`/results/${latestCompleted.id}`}>
-                          <Eye className="mr-1 h-3 w-3" /> View
-                        </Link>
-                      </Button>
-                    </div>
-                  )}
-                  {inProgress && (
-                    <div className="rounded-md bg-accent/10 p-3 text-sm text-accent font-medium">
-                      Assessment in progress
-                    </div>
-                  )}
-                  <Button className="w-full" asChild>
-                    <Link to={`/assessment/${fw.id}`}>
-                      {inProgress ? "Continue" : "Start"} Assessment
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
+              <FrameworkCard
+                key={fw.id}
+                fw={fw}
+                assessments={fwAssessments}
+                inProgress={inProgress}
+              />
             );
           })}
         </div>
 
-        {/* Past Assessments */}
+        {/* Past Assessments Table */}
         {assessments.length > 0 && (
           <div className="mt-12">
             <h2 className="mb-4 font-display text-xl font-bold">Past Assessments</h2>
