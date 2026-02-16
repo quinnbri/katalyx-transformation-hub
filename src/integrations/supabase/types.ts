@@ -48,8 +48,11 @@ export type Database = {
           framework: string
           id: string
           options: Json | null
+          original_question_text: string | null
+          question_format: string
           question_text: string
           question_type: string
+          scenario_context: string | null
           sort_order: number
         }
         Insert: {
@@ -58,8 +61,11 @@ export type Database = {
           framework: string
           id?: string
           options?: Json | null
+          original_question_text?: string | null
+          question_format?: string
           question_text: string
           question_type?: string
+          scenario_context?: string | null
           sort_order?: number
         }
         Update: {
@@ -68,8 +74,11 @@ export type Database = {
           framework?: string
           id?: string
           options?: Json | null
+          original_question_text?: string | null
+          question_format?: string
           question_text?: string
           question_type?: string
+          scenario_context?: string | null
           sort_order?: number
         }
         Relationships: []
