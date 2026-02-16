@@ -169,6 +169,52 @@ export type Database = {
           },
         ]
       }
+      assessment_variant_assignments: {
+        Row: {
+          assessment_id: string
+          created_at: string
+          id: string
+          question_id: string
+          variant_id: string
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string
+          id?: string
+          question_id: string
+          variant_id: string
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string
+          id?: string
+          question_id?: string
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_variant_assignments_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_variant_assignments_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_variant_assignments_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "question_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessments: {
         Row: {
           completed_at: string | null
@@ -450,6 +496,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      question_variants: {
+        Row: {
+          created_at: string
+          id: string
+          option_descriptions: string[]
+          question_text: string
+          scenario_context: string
+          template_question_id: string
+          variant_number: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_descriptions?: string[]
+          question_text: string
+          scenario_context: string
+          template_question_id: string
+          variant_number?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_descriptions?: string[]
+          question_text?: string
+          scenario_context?: string
+          template_question_id?: string
+          variant_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_variants_template_question_id_fkey"
+            columns: ["template_question_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shared_backlogs: {
         Row: {

@@ -22,6 +22,14 @@ interface Question {
   sort_order: number;
 }
 
+interface VariantAssignment {
+  question_id: string;
+  variant_id: string;
+  scenario_context: string;
+  question_text: string;
+  option_descriptions: string[];
+}
+
 const frameworkNames: Record<string, string> = {
   ai_readiness: "AI Readiness Assessment",
   devops: "DevOps Team Assessment",
@@ -47,10 +55,10 @@ export default function Assessment() {
   const [currentDomainIdx, setCurrentDomainIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [variantMap, setVariantMap] = useState<Record<string, VariantAssignment>>({});
 
   const domains = useMemo(() => {
-    const unique = [...new Set(questions.map((q) => q.domain))];
-    return unique;
+    return [...new Set(questions.map((q) => q.domain))];
   }, [questions]);
 
   const currentQuestions = useMemo(
@@ -65,13 +73,16 @@ export default function Assessment() {
     if (!framework || !user) return;
 
     const init = async () => {
+      // Load template questions
       const { data: qs } = await supabase
         .from("assessment_questions")
         .select("*")
         .eq("framework", framework)
         .order("sort_order");
-      setQuestions((qs as unknown as Question[]) || []);
+      const templateQuestions = (qs as unknown as Question[]) || [];
+      setQuestions(templateQuestions);
 
+      // Get or create assessment
       const { data: existing } = await supabase
         .from("assessments")
         .select("id")
@@ -93,26 +104,98 @@ export default function Assessment() {
       }
       setAssessmentId(aId);
 
+      // Load saved responses
       const { data: saved } = await supabase
         .from("assessment_responses")
         .select("question_id, response_value")
         .eq("assessment_id", aId);
-
       if (saved) {
         const map: Record<string, string> = {};
         saved.forEach((r: any) => { map[r.question_id] = r.response_value; });
         setResponses(map);
       }
 
+      // Load or assign variants
+      await loadOrAssignVariants(aId, templateQuestions);
       setLoading(false);
     };
     init();
   }, [framework, user]);
 
+  const loadOrAssignVariants = async (aId: string, templateQuestions: Question[]) => {
+    // Check for existing assignments
+    const { data: existingAssignments } = await supabase
+      .from("assessment_variant_assignments")
+      .select("question_id, variant_id")
+      .eq("assessment_id", aId);
+
+    const assignedMap: Record<string, string> = {};
+    if (existingAssignments) {
+      existingAssignments.forEach((a: any) => { assignedMap[a.question_id] = a.variant_id; });
+    }
+
+    const unassigned = templateQuestions.filter(q => !assignedMap[q.id]);
+
+    if (unassigned.length > 0) {
+      // Fetch all available variants for unassigned questions
+      const questionIds = unassigned.map(q => q.id);
+      const { data: allVariants } = await supabase
+        .from("question_variants")
+        .select("*")
+        .in("template_question_id", questionIds);
+
+      // Group variants by template
+      const variantsByTemplate: Record<string, any[]> = {};
+      (allVariants || []).forEach((v: any) => {
+        if (!variantsByTemplate[v.template_question_id]) variantsByTemplate[v.template_question_id] = [];
+        variantsByTemplate[v.template_question_id].push(v);
+      });
+
+      // Randomly assign one variant per question
+      const newAssignments: { assessment_id: string; question_id: string; variant_id: string }[] = [];
+      for (const q of unassigned) {
+        const variants = variantsByTemplate[q.id];
+        if (variants && variants.length > 0) {
+          const picked = variants[Math.floor(Math.random() * variants.length)];
+          assignedMap[q.id] = picked.id;
+          newAssignments.push({ assessment_id: aId, question_id: q.id, variant_id: picked.id });
+        }
+      }
+
+      if (newAssignments.length > 0) {
+        await supabase.from("assessment_variant_assignments").insert(newAssignments);
+      }
+    }
+
+    // Now fetch the actual variant data for all assigned variants
+    const variantIds = Object.values(assignedMap);
+    if (variantIds.length > 0) {
+      const { data: variantData } = await supabase
+        .from("question_variants")
+        .select("*")
+        .in("id", variantIds);
+
+      const vMap: Record<string, VariantAssignment> = {};
+      (variantData || []).forEach((v: any) => {
+        // Find which question this variant belongs to
+        const qId = Object.entries(assignedMap).find(([, vid]) => vid === v.id)?.[0];
+        if (qId) {
+          vMap[qId] = {
+            question_id: qId,
+            variant_id: v.id,
+            scenario_context: v.scenario_context,
+            question_text: v.question_text,
+            option_descriptions: v.option_descriptions,
+          };
+        }
+      });
+      setVariantMap(vMap);
+    }
+  };
+
   const saveResponse = async (questionId: string, value: string) => {
     setResponses((prev) => ({ ...prev, [questionId]: value }));
     if (!assessmentId || !user) return;
-
     await supabase.from("assessment_responses").upsert(
       { assessment_id: assessmentId, question_id: questionId, user_id: user.id, response_value: value },
       { onConflict: "assessment_id,question_id" }
@@ -122,7 +205,6 @@ export default function Assessment() {
   const handleSubmit = async () => {
     if (!assessmentId || !user || !framework) return;
     setSubmitting(true);
-
     try {
       const responsePayload = questions.map((q) => ({
         domain: q.domain,
@@ -134,7 +216,6 @@ export default function Assessment() {
       const { data, error } = await supabase.functions.invoke("generate-results", {
         body: { framework, domains, responses: responsePayload },
       });
-
       if (error) throw error;
 
       await supabase.from("assessment_results").insert({
@@ -159,6 +240,27 @@ export default function Assessment() {
     }
   };
 
+  // Get the display data for a question — use variant if available, else fall back to template
+  const getQuestionDisplay = (q: Question) => {
+    const variant = variantMap[q.id];
+    if (variant) {
+      return {
+        scenario_context: variant.scenario_context,
+        question_text: variant.question_text,
+        option_descriptions: variant.option_descriptions,
+        isScenario: true,
+      };
+    }
+    // Fallback to template data
+    const isScenario = q.question_format === "scenario" && q.scenario_context;
+    return {
+      scenario_context: q.scenario_context,
+      question_text: q.question_text,
+      option_descriptions: q.options?.descriptions || [],
+      isScenario: !!isScenario,
+    };
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -173,7 +275,6 @@ export default function Assessment() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
           <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
@@ -188,7 +289,6 @@ export default function Assessment() {
       <main className="container max-w-3xl py-10">
         <h1 className="font-display text-2xl font-bold">{frameworkNames[framework!] || framework}</h1>
 
-        {/* Progress */}
         <div className="mt-4 space-y-2">
           <Progress value={progress} className="h-2" />
           <div className="flex justify-between text-xs text-muted-foreground">
@@ -204,29 +304,27 @@ export default function Assessment() {
           </div>
         </div>
 
-        {/* Domain title */}
         <h2 className="mt-8 font-display text-xl font-semibold text-primary">{domains[currentDomainIdx]}</h2>
 
-        {/* Questions */}
         <div className="mt-6 space-y-6">
           {currentQuestions.map((q, idx) => {
-            const isScenario = q.question_format === "scenario" && q.scenario_context;
+            const display = getQuestionDisplay(q);
 
             return (
               <Card key={q.id}>
                 <CardHeader className="pb-3">
-                  {isScenario ? (
+                  {display.isScenario ? (
                     <div className="space-y-2">
                       <p className="text-sm leading-relaxed text-foreground/80 italic border-l-2 border-primary/30 pl-3">
-                        {q.scenario_context}
+                        {display.scenario_context}
                       </p>
                       <CardTitle className="text-base font-medium pt-1">
-                        {idx + 1}. {q.question_text}
+                        {idx + 1}. {display.question_text}
                       </CardTitle>
                     </div>
                   ) : (
                     <CardTitle className="text-base font-medium">
-                      {idx + 1}. {q.question_text}
+                      {idx + 1}. {display.question_text}
                     </CardTitle>
                   )}
                 </CardHeader>
@@ -239,6 +337,7 @@ export default function Assessment() {
                     {q.options?.labels?.map((label, i) => {
                       const level = i + 1;
                       const isSelected = responses[q.id] === String(level);
+                      const variantDesc = display.option_descriptions?.[i];
                       return (
                         <div
                           key={i}
@@ -251,15 +350,13 @@ export default function Assessment() {
                         >
                           <RadioGroupItem value={String(level)} id={`${q.id}-${i}`} className="mt-1 shrink-0" />
                           <Label htmlFor={`${q.id}-${i}`} className="flex-1 cursor-pointer">
-                            {isScenario ? (
-                              /* Scenario: descriptions are primary, labels are secondary */
+                            {display.isScenario ? (
                               <div>
                                 <span className="text-sm leading-relaxed">
-                                  {q.options?.descriptions?.[i] || label}
+                                  {variantDesc || label}
                                 </span>
                               </div>
                             ) : (
-                              /* Direct: labels primary, descriptions secondary */
                               <div>
                                 <span className="text-sm font-medium">{label}</span>
                                 {q.options?.descriptions?.[i] && (
@@ -280,7 +377,6 @@ export default function Assessment() {
           })}
         </div>
 
-        {/* Navigation */}
         <div className="mt-8 flex justify-between">
           <Button
             variant="outline"
