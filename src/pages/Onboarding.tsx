@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useProtected } from "@/components/ProtectedRoute";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,7 +75,7 @@ const cloudProviders = [
 
 export default function Onboarding() {
   const { user } = useAuth();
-  const { markOnboardingComplete } = useProtected();
+  
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
 
