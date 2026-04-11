@@ -13,11 +13,8 @@ const Header = () => {
         </Link>
 
         <div className="flex items-center gap-4">
-          <Link to="/login" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-            Login
-          </Link>
           <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-5" asChild>
-            <Link to="/login">Start Assessment</Link>
+            <Link to="/dashboard">Start Assessment</Link>
           </Button>
         </div>
       </div>
