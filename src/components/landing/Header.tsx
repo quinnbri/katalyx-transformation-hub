@@ -13,7 +13,7 @@ const Header = () => {
         </Link>
 
         <div className="flex items-center gap-4">
-          <Button size="sm" variant="outline" className="rounded-full px-5" asChild>
+          <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-5" asChild>
             <Link to="/login">Login</Link>
           </Button>
         </div>
