@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -85,6 +85,24 @@ export default function Onboarding() {
   const [infraType, setInfraType] = useState("");
   const [selectedClouds, setSelectedClouds] = useState<string[]>([]);
   const [company, setCompany] = useState("");
+
+  // Pre-fill from agent conversation metadata
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("katalyx_user_metadata");
+      if (!stored) return;
+      const meta = JSON.parse(stored);
+      if (meta.company) setCompany(meta.company);
+      if (meta.industry && industries.includes(meta.industry)) setIndustry(meta.industry);
+      if (meta.company_size && companySizes.includes(meta.company_size)) setCompanySize(meta.company_size);
+      if (meta.tech_team_size && techTeamSizes.includes(meta.tech_team_size)) setTechTeamSize(meta.tech_team_size);
+      if (meta.infrastructure_type && infrastructureTypes.includes(meta.infrastructure_type)) setInfraType(meta.infrastructure_type);
+      if (meta.cloud_providers?.length) {
+        const valid = meta.cloud_providers.filter((p: string) => cloudProviders.includes(p));
+        if (valid.length) setSelectedClouds(valid);
+      }
+    } catch { /* ignore parse errors */ }
+  }, []);
 
   const toggleCloud = (provider: string) => {
     setSelectedClouds((prev) =>
