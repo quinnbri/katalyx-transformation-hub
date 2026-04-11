@@ -14,7 +14,7 @@ const Header = () => {
 
         <div className="flex items-center gap-4">
           <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-5" asChild>
-            <Link to="/dashboard">Start Assessment</Link>
+            <Link to="/agent">Start Assessment</Link>
           </Button>
         </div>
       </div>
