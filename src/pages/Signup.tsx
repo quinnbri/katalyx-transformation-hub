@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "@/hooks/use-toast";
 
 export default function Signup() {
-  const [fullName, setFullName] = useState("");
+  const [fullName, setFullName] = useState(() => {
+    try {
+      const meta = JSON.parse(localStorage.getItem("katalyx_user_metadata") || "{}");
+      return meta.full_name || "";
+    } catch { return ""; }
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
