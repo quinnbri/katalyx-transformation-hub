@@ -22,7 +22,7 @@ const Hero = () => {
 
           <div className="mt-10 flex justify-center">
             <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 h-14 text-base font-semibold" asChild>
-              <Link to="/dashboard">
+              <Link to="/agent">
                 Start Free Assessment
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
