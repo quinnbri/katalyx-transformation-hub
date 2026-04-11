@@ -206,12 +206,16 @@ export default function Agent() {
         onDelta: upsert,
         onDone: () => {
           setIsLoading(false);
-          // Check for action directives
-          const action = parseActions(assistantSoFar);
-          if (action?.action === "redirect_to_assessment" && action.framework) {
-            setTimeout(() => navigate(`/assessment/${action.framework}`), 1500);
-          } else if (action?.action === "redirect_to_results" && action.assessment_id) {
-            setTimeout(() => navigate(`/results/${action.assessment_id}`), 1500);
+          // Process all action directives
+          const actions = parseActions(assistantSoFar);
+          for (const action of actions) {
+            if (action.action === "update_metadata" && action.data) {
+              saveMetadata(action.data);
+            } else if (action.action === "redirect_to_assessment" && action.framework) {
+              setTimeout(() => navigate(`/assessment/${action.framework}`), 1500);
+            } else if (action.action === "redirect_to_results" && action.assessment_id) {
+              setTimeout(() => navigate(`/results/${action.assessment_id}`), 1500);
+            }
           }
         },
       });
