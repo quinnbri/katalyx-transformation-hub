@@ -120,7 +120,7 @@ export default function Onboarding() {
     if (error) {
       toast({ title: "Error saving profile", description: error.message, variant: "destructive" });
     } else {
-      markOnboardingComplete();
+      
       navigate("/dashboard", { replace: true });
     }
   };
