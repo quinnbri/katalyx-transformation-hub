@@ -76,19 +76,56 @@ async function streamChat({
   onDone();
 }
 
-function parseActions(text: string): { action: string; framework?: string; assessment_id?: string } | null {
-  const regex = /\{"action"\s*:\s*"([^"]+)"[^}]*\}/;
-  const match = text.match(regex);
-  if (!match) return null;
-  try {
-    return JSON.parse(match[0]);
-  } catch {
-    return null;
+function parseActions(text: string): { action: string; framework?: string; assessment_id?: string; data?: Record<string, any> }[] {
+  const regex = /\{"action"\s*:\s*"[^"]*"[^}]*(?:\{[^}]*\}[^}]*)?\}/g;
+  const results: any[] = [];
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    try {
+      results.push(JSON.parse(match[0]));
+    } catch {
+      // Try with nested objects by finding balanced braces
+      try {
+        let depth = 0;
+        let start = match.index;
+        let end = start;
+        for (let i = start; i < text.length; i++) {
+          if (text[i] === '{') depth++;
+          if (text[i] === '}') depth--;
+          if (depth === 0) { end = i + 1; break; }
+        }
+        results.push(JSON.parse(text.slice(start, end)));
+      } catch { /* skip */ }
+    }
   }
+  return results;
 }
 
 function cleanContent(text: string): string {
-  return text.replace(/\{"action"\s*:\s*"[^"]*"[^}]*\}/g, "").trim();
+  // Remove all JSON action blocks (including nested ones like metadata)
+  let cleaned = text;
+  const regex = /\{"action"\s*:\s*"/g;
+  let match;
+  while ((match = regex.exec(cleaned)) !== null) {
+    let depth = 0;
+    let start = match.index;
+    for (let i = start; i < cleaned.length; i++) {
+      if (cleaned[i] === '{') depth++;
+      if (cleaned[i] === '}') depth--;
+      if (depth === 0) {
+        cleaned = cleaned.slice(0, start) + cleaned.slice(i + 1);
+        regex.lastIndex = start;
+        break;
+      }
+    }
+  }
+  return cleaned.trim();
+}
+
+function saveMetadata(data: Record<string, any>) {
+  const existing = JSON.parse(localStorage.getItem("katalyx_user_metadata") || "{}");
+  const merged = { ...existing, ...data };
+  localStorage.setItem("katalyx_user_metadata", JSON.stringify(merged));
 }
 
 export default function Agent() {
