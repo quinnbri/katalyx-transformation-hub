@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Bot, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import AssessmentProgress, { type DomainProgress } from "@/components/agent/AssessmentProgress";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -136,6 +137,8 @@ export default function Agent() {
   const [hasStarted, setHasStarted] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [assessmentFramework, setAssessmentFramework] = useState<string | null>(null);
+  const [domainProgress, setDomainProgress] = useState<DomainProgress[]>([]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -211,6 +214,9 @@ export default function Agent() {
           for (const action of actions) {
             if (action.action === "update_metadata" && action.data) {
               saveMetadata(action.data);
+            } else if (action.action === "update_progress" && action.domains) {
+              setAssessmentFramework(action.framework || null);
+              setDomainProgress(action.domains as DomainProgress[]);
             } else if (action.action === "redirect_to_assessment" && action.framework) {
               setTimeout(() => navigate(`/assessment/${action.framework}`), 1500);
             } else if (action.action === "redirect_to_results" && action.assessment_id) {
