@@ -258,6 +258,9 @@ export default function Agent() {
         </div>
       </nav>
 
+      {/* Assessment Progress */}
+      <AssessmentProgress domains={domainProgress} framework={assessmentFramework} />
+
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto pt-10 pb-48 px-6 space-y-10">
