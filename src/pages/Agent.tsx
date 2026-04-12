@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Bot, User, Loader2 } from "lucide-react";
+import { Send, Bot, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -233,63 +233,74 @@ export default function Agent() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-screen agent-refraction-bg text-foreground antialiased relative">
+      {/* Ambient background orbs */}
+      <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
+      <div className="fixed bottom-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full bg-accent/[0.03] blur-[100px] pointer-events-none" />
+
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent"></div>
-            <span className="text-xl font-bold bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">
-              KATALYX
-            </span>
-          </Link>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Bot className="h-4 w-4" />
-            <span>AI Assessment Advisor</span>
-          </div>
+      <nav className="sticky top-0 z-50 h-16 agent-glass-card flex items-center justify-between px-8 border-b border-border/20">
+        <Link to="/" className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent" />
+          <span className="text-lg font-bold tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            KATALYX
+          </span>
+        </Link>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/40 border border-border/30 text-sm font-medium text-muted-foreground">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>AI Assessment Advisor</span>
         </div>
-      </header>
+      </nav>
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
-        <div className="container max-w-3xl py-6 space-y-6">
+        <div className="max-w-3xl mx-auto pt-10 pb-48 px-6 space-y-10">
           {messages.map((msg, i) => (
-            <div key={i} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-              {msg.role === "assistant" && (
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Bot className="h-4 w-4 text-primary" />
-                </div>
-              )}
+            <div
+              key={i}
+              className={`flex flex-col gap-3 animate-fade-in ${
+                msg.role === "user" ? "items-end" : "items-start"
+              }`}
+            >
+              {/* Label */}
+              <div className={`flex items-center gap-3 px-1 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+                <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground/50">
+                  {msg.role === "user" ? "You" : "Katalyx"}
+                </span>
+                <div className="h-px w-8 bg-border/30" />
+              </div>
+
+              {/* Bubble */}
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                className={`max-w-[88%] px-6 py-4 ${
                   msg.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    ? "bg-foreground text-background rounded-[2rem] rounded-tr-lg shadow-xl shadow-foreground/5"
+                    : "agent-message-ai rounded-[2rem] rounded-tl-lg"
                 }`}
               >
                 {msg.role === "assistant" ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0">
+                  <div className="prose prose-lg dark:prose-invert max-w-none [&>p]:mb-3 [&>p:last-child]:mb-0 [&>p]:leading-relaxed">
                     <ReactMarkdown>{cleanContent(msg.content)}</ReactMarkdown>
                   </div>
                 ) : (
-                  <p className="text-sm">{msg.content}</p>
+                  <p className="text-lg leading-relaxed font-light">{msg.content}</p>
                 )}
               </div>
-              {msg.role === "user" && (
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                  <User className="h-4 w-4 text-primary-foreground" />
-                </div>
-              )}
             </div>
           ))}
 
           {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-            <div className="flex gap-3 justify-start">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Bot className="h-4 w-4 text-primary" />
+            <div className="flex flex-col gap-3 items-start animate-fade-in">
+              <div className="flex items-center gap-3 px-1">
+                <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground/50">Katalyx</span>
+                <div className="h-px w-8 bg-border/30" />
               </div>
-              <div className="bg-muted rounded-2xl px-4 py-3">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <div className="agent-message-ai rounded-[2rem] rounded-tl-lg px-6 py-5">
+                <div className="flex gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce [animation-delay:-0.15s]" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce" />
+                </div>
               </div>
             </div>
           )}
@@ -297,16 +308,16 @@ export default function Agent() {
       </div>
 
       {/* Input */}
-      <div className="border-t border-border/50 bg-background/95 backdrop-blur">
-        <div className="container max-w-3xl py-4">
-          <div className="flex gap-2 items-end">
+      <div className="fixed bottom-10 inset-x-0 px-6 pointer-events-none z-40">
+        <div className="max-w-2xl mx-auto pointer-events-auto">
+          <div className="agent-glass-card rounded-[2.5rem] p-2 flex items-end ring-1 ring-border/20 agent-input-glow">
             <Textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type your message..."
-              className="min-h-[44px] max-h-[120px] resize-none rounded-xl"
+              className="flex-1 bg-transparent border-none py-4 px-4 text-lg resize-none min-h-[56px] max-h-48 placeholder:text-muted-foreground/30 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none"
               rows={1}
               disabled={isLoading}
             />
@@ -314,12 +325,12 @@ export default function Agent() {
               onClick={send}
               disabled={!input.trim() || isLoading}
               size="icon"
-              className="rounded-xl h-[44px] w-[44px] shrink-0"
+              className="mb-1 w-12 h-12 rounded-full bg-primary text-primary-foreground shrink-0 shadow-lg"
             >
-              <Send className="h-4 w-4" />
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2 text-center">
+          <p className="mt-4 text-center text-[10px] tracking-widest uppercase text-muted-foreground/30">
             Katalyx AI can make mistakes. Verify important information.
           </p>
         </div>
