@@ -39,11 +39,11 @@ export default function AssessmentProgress({ domains, framework }: AssessmentPro
             <div
               key={domain.name}
               className={cn(
-                "flex-1 rounded-xl px-3 py-2.5 text-center transition-all duration-500 border",
+                "flex-1 rounded-xl px-3 py-2.5 text-center transition-all duration-700 border",
                 domain.status === "complete" &&
-                  "bg-emerald-500/15 border-emerald-500/30 shadow-[0_0_12px_-4px_hsl(152,69%,53%)]",
+                  "bg-teal-600/20 border-teal-600/40",
                 domain.status === "active" &&
-                  "bg-amber-500/15 border-amber-500/30 shadow-[0_0_12px_-4px_hsl(38,92%,50%)] animate-pulse",
+                  "bg-[#ff6b6b]/15 border-[#ff6b6b]/40",
                 domain.status === "pending" &&
                   "bg-muted/30 border-border/20"
               )}
@@ -51,8 +51,8 @@ export default function AssessmentProgress({ domains, framework }: AssessmentPro
               <span
                 className={cn(
                   "text-[10px] sm:text-xs font-semibold tracking-wide leading-tight",
-                  domain.status === "complete" && "text-emerald-400",
-                  domain.status === "active" && "text-amber-400",
+                  domain.status === "complete" && "text-teal-400",
+                  domain.status === "active" && "text-[#ff6b6b]",
                   domain.status === "pending" && "text-muted-foreground/40"
                 )}
               >
