@@ -48,7 +48,7 @@ When conducting the assessment conversationally, make it feel like a CONVERSATIO
 - YOU determine the maturity level (1-5) from their natural language answer. Don't ask them to self-score.
 - Naturally weave in 1-2 metadata questions during the assessment (e.g., "By the way, roughly how large is your engineering team?")
 - Track their responses and provide encouragement along the way
-- After all questions, summarize their results and provide the redirect: {"action":"redirect_to_results","assessment_id":"<id>"}
+- After all questions, summarize their results and provide the redirect: {"action":"redirect_to_dashboard"}
 
 ## CRITICAL: Domain Progress Tracking
 After EVERY assistant message during a conversational assessment, you MUST emit a progress JSON on its own line:

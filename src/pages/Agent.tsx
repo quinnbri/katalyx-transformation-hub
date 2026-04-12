@@ -222,6 +222,8 @@ export default function Agent() {
               setDomainProgress(action.domains as DomainProgress[]);
             } else if (action.action === "redirect_to_assessment" && action.framework) {
               setTimeout(() => navigate(`/assessment/${action.framework}`), 1500);
+            } else if (action.action === "redirect_to_dashboard") {
+              setTimeout(() => navigate("/dashboard"), 2000);
             } else if (action.action === "redirect_to_results" && action.assessment_id) {
               setTimeout(() => navigate(`/results/${action.assessment_id}`), 1500);
             }
