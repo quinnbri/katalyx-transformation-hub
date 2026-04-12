@@ -77,7 +77,7 @@ async function streamChat({
   onDone();
 }
 
-function parseActions(text: string): { action: string; framework?: string; assessment_id?: string; data?: Record<string, any> }[] {
+function parseActions(text: string): { action: string; framework?: string; assessment_id?: string; data?: Record<string, any>; domains?: any[] }[] {
   const regex = /\{"action"\s*:\s*"[^"]*"[^}]*(?:\{[^}]*\}[^}]*)?\}/g;
   const results: any[] = [];
   let match;
