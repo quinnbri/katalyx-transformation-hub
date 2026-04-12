@@ -142,7 +142,10 @@ export default function Agent() {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+    if (!isLoading) {
+      textareaRef.current?.focus();
+    }
+  }, [messages, isLoading]);
 
   // Auto-start conversation
   useEffect(() => {
