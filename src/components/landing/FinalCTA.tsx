@@ -17,7 +17,7 @@ const FinalCTA = () => {
           <div className="mt-10 flex justify-center">
             <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 py-6 text-base" asChild>
               <Link to="/agent">
-                Start Free Assessment
+                Speak to Your AI Advisor
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
