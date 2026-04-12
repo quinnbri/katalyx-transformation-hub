@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Brain, GitBranch, Building2, LogOut, BarChart3, Eye } from "lucide-react";
 import FrameworkCard from "@/components/dashboard/FrameworkCard";
+import SaveProgressBanner from "@/components/dashboard/SaveProgressBanner";
 
 const frameworks = [
   {
@@ -106,6 +107,8 @@ export default function Dashboard() {
 
       {/* Main */}
       <main className="container py-10">
+        <SaveProgressBanner />
+
         <div className="mb-8">
           <h1 className="font-display text-3xl font-bold">Your Dashboard</h1>
           <p className="mt-1 text-muted-foreground">
