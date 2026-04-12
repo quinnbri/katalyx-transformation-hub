@@ -324,6 +324,7 @@ export default function Agent() {
         <div className="max-w-2xl mx-auto pointer-events-auto">
           <div className="agent-glass-card rounded-[2.5rem] p-2 flex items-end ring-1 ring-border/20 agent-input-glow">
             <Textarea
+              autoFocus
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
