@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Bot, User, Loader2 } from "lucide-react";
+import { Send, Bot, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 type Msg = { role: "user" | "assistant"; content: string };
