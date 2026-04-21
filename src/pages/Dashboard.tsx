@@ -3,9 +3,21 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Brain, GitBranch, Building2, LogOut, BarChart3, Eye } from "lucide-react";
+import { Brain, GitBranch, Building2, LogOut, BarChart3, Eye, Trash2 } from "lucide-react";
 import FrameworkCard from "@/components/dashboard/FrameworkCard";
 import SaveProgressBanner from "@/components/dashboard/SaveProgressBanner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
 
 const frameworks = [
   {
