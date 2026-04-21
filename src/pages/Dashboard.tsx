@@ -91,6 +91,16 @@ export default function Dashboard() {
     fetchAssessments();
   }, []);
 
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("assessments").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Failed to delete", description: error.message, variant: "destructive" });
+      return;
+    }
+    setAssessments((prev) => prev.filter((a) => a.id !== id));
+    toast({ title: "Assessment deleted" });
+  };
+
   const getFrameworkAssessments = (frameworkId: string) =>
     assessments.filter((a) => a.framework === frameworkId);
 
