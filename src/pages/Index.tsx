@@ -4,6 +4,7 @@ import StatsBar from "@/components/landing/StatsBar";
 import HowItWorks from "@/components/landing/HowItWorks";
 import Features from "@/components/landing/Features";
 import WhyFail from "@/components/landing/WhyFail";
+import Consultation from "@/components/landing/Consultation";
 import Creator from "@/components/landing/Creator";
 import FinalCTA from "@/components/landing/FinalCTA";
 import Footer from "@/components/landing/Footer";
@@ -18,6 +19,7 @@ const Index = () => {
         <HowItWorks />
         <Features />
         <WhyFail />
+        <Consultation />
         <Creator />
         <FinalCTA />
       </main>

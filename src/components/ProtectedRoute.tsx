@@ -47,10 +47,14 @@ export default function ProtectedRoute() {
     );
   }
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    // Send new visitors to signup (acquisition-first) and remember where
+    // they were trying to go so we can return them after auth.
+    return <Navigate to="/signup" replace state={{ from: location }} />;
+  }
 
   if (!onboardingDone && location.pathname !== "/onboarding") {
-    return <Navigate to="/onboarding" replace />;
+    return <Navigate to="/onboarding" replace state={{ from: location }} />;
   }
 
   return (

@@ -11,15 +11,18 @@ const FinalCTA = () => {
             Ready to Transform with Confidence?
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Join transformation leaders who are using proven frameworks to succeed
+            Start with the AI advisor. If you need a human partner, we'll connect you with one.
           </p>
 
-          <div className="mt-10 flex justify-center">
-            <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 py-6 text-base" asChild>
+          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Button variant="cta" size="pill" asChild>
               <Link to="/agent">
                 Speak to Your AI Advisor
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
+            </Button>
+            <Button variant="ctaOutline" size="pill" asChild>
+              <a href="#consultation">Book a free consultation</a>
             </Button>
           </div>
 
