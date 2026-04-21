@@ -3,9 +3,21 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Brain, GitBranch, Building2, LogOut, BarChart3, Eye } from "lucide-react";
+import { Brain, GitBranch, Building2, LogOut, BarChart3, Eye, Trash2 } from "lucide-react";
 import FrameworkCard from "@/components/dashboard/FrameworkCard";
 import SaveProgressBanner from "@/components/dashboard/SaveProgressBanner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
 
 const frameworks = [
   {
@@ -79,6 +91,16 @@ export default function Dashboard() {
     fetchAssessments();
   }, []);
 
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("assessments").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Failed to delete", description: error.message, variant: "destructive" });
+      return;
+    }
+    setAssessments((prev) => prev.filter((a) => a.id !== id));
+    toast({ title: "Assessment deleted" });
+  };
+
   const getFrameworkAssessments = (frameworkId: string) =>
     assessments.filter((a) => a.framework === frameworkId);
 
@@ -137,15 +159,16 @@ export default function Dashboard() {
           <div className="mt-12">
             <h2 className="mb-4 font-display text-xl font-bold">Past Assessments</h2>
             <div className="rounded-lg border bg-background">
-              <div className="grid grid-cols-5 gap-4 border-b px-6 py-3 text-sm font-medium text-muted-foreground">
+              <div className="grid grid-cols-6 gap-4 border-b px-6 py-3 text-sm font-medium text-muted-foreground">
                 <span>Framework</span>
                 <span>Status</span>
                 <span>Score</span>
                 <span>Date</span>
                 <span></span>
+                <span></span>
               </div>
               {assessments.map((a) => (
-                <div key={a.id} className="grid grid-cols-5 gap-4 border-b last:border-0 px-6 py-4 text-sm items-center">
+                <div key={a.id} className="grid grid-cols-6 gap-4 border-b last:border-0 px-6 py-4 text-sm items-center">
                   <span className="font-medium capitalize">{a.framework.replace(/_/g, " ")}</span>
                   <span>
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -166,6 +189,29 @@ export default function Dashboard() {
                         <Link to={`/assessment/${a.framework}`}>Continue</Link>
                       </Button>
                     )}
+                  </span>
+                  <span className="justify-self-end">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this assessment?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently remove the assessment and its results. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(a.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </span>
                 </div>
               ))}
