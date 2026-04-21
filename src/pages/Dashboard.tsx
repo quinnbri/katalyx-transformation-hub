@@ -159,15 +159,16 @@ export default function Dashboard() {
           <div className="mt-12">
             <h2 className="mb-4 font-display text-xl font-bold">Past Assessments</h2>
             <div className="rounded-lg border bg-background">
-              <div className="grid grid-cols-5 gap-4 border-b px-6 py-3 text-sm font-medium text-muted-foreground">
+              <div className="grid grid-cols-6 gap-4 border-b px-6 py-3 text-sm font-medium text-muted-foreground">
                 <span>Framework</span>
                 <span>Status</span>
                 <span>Score</span>
                 <span>Date</span>
                 <span></span>
+                <span></span>
               </div>
               {assessments.map((a) => (
-                <div key={a.id} className="grid grid-cols-5 gap-4 border-b last:border-0 px-6 py-4 text-sm items-center">
+                <div key={a.id} className="grid grid-cols-6 gap-4 border-b last:border-0 px-6 py-4 text-sm items-center">
                   <span className="font-medium capitalize">{a.framework.replace(/_/g, " ")}</span>
                   <span>
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
