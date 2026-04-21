@@ -24,6 +24,7 @@ const Benchmarks = lazy(() => import("./pages/Benchmarks"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const BusinessContext = lazy(() => import("./pages/BusinessContext"));
 const Backlog = lazy(() => import("./pages/Backlog"));
+const FrameworkDetail = lazy(() => import("./pages/FrameworkDetail"));
 const SharedBacklog = lazy(() => import("./pages/SharedBacklog"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
