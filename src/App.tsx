@@ -71,6 +71,7 @@ const App = () => (
                   <Route element={<ProtectedRoute />}>
                     <Route path="/agent" element={<Agent />} />
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/framework/:framework" element={<FrameworkDetail />} />
                     <Route path="/assessment/:framework" element={<Assessment />} />
                     <Route path="/results/:assessmentId" element={<Results />} />
                     <Route path="/benchmarks" element={<Benchmarks />} />
