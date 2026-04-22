@@ -9,6 +9,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
+import NbaAdvisor from "@/components/results/NbaAdvisor";
 
 interface DomainScore {
   score: number;
@@ -234,6 +235,18 @@ export default function Results() {
             </Card>
           ))}
         </div>
+
+        {/* NBA Advisor */}
+        <h2 className="mb-4 font-display text-xl font-bold">Work the Plan With an Advisor</h2>
+        {assessmentId && (
+          <NbaAdvisor
+            assessmentId={assessmentId}
+            framework={framework}
+            overallScore={result.overall_score}
+            domainScores={result.domain_scores as unknown as Record<string, unknown>}
+            roadmap={result.roadmap}
+          />
+        )}
 
         {/* Roadmap */}
         <h2 className="mb-4 font-display text-xl font-bold">Transformation Roadmap</h2>
