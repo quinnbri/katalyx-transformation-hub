@@ -443,6 +443,136 @@ export type Database = {
           },
         ]
       }
+      nba_advisor_sessions: {
+        Row: {
+          assessment_id: string
+          created_at: string
+          domain: string | null
+          epic_action: string
+          epic_addressed: boolean
+          id: string
+          messages: Json
+          roadmap_item_index: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string
+          domain?: string | null
+          epic_action: string
+          epic_addressed?: boolean
+          id?: string
+          messages?: Json
+          roadmap_item_index: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string
+          domain?: string | null
+          epic_action?: string
+          epic_addressed?: boolean
+          id?: string
+          messages?: Json
+          roadmap_item_index?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      nba_generated_strategies: {
+        Row: {
+          created_at: string
+          domain: string | null
+          id: string
+          markdown: string
+          session_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          markdown: string
+          session_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          markdown?: string
+          session_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nba_generated_strategies_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "nba_advisor_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nba_proposed_tasks: {
+        Row: {
+          accepted: boolean
+          created_at: string
+          description: string | null
+          dismissed: boolean
+          effort_days: number | null
+          id: string
+          outcome: string | null
+          owner_role: string | null
+          position: number
+          session_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          accepted?: boolean
+          created_at?: string
+          description?: string | null
+          dismissed?: boolean
+          effort_days?: number | null
+          id?: string
+          outcome?: string | null
+          owner_role?: string | null
+          position?: number
+          session_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          accepted?: boolean
+          created_at?: string
+          description?: string | null
+          dismissed?: boolean
+          effort_days?: number | null
+          id?: string
+          outcome?: string | null
+          owner_role?: string | null
+          position?: number
+          session_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nba_proposed_tasks_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "nba_advisor_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           annual_revenue: string | null
