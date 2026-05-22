@@ -52,6 +52,11 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
+      <Seo
+        title="Log in — KATALYX"
+        description="Sign in to your KATALYX account to continue your digital transformation assessment and access your roadmap."
+        path="/login"
+      />
       <Card className="w-full max-w-md shadow-sm">
         <CardHeader className="text-center">
           <Link to="/" className="mx-auto mb-4 flex items-center gap-2" aria-label="KATALYX home">

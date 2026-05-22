@@ -246,6 +246,11 @@ export default function Agent() {
 
   return (
     <div className="flex flex-col h-screen agent-refraction-bg text-foreground antialiased relative">
+      <Seo
+        title="AI Advisor — KATALYX"
+        description="Chat with the KATALYX AI advisor for 30 minutes and walk away with a prioritized digital transformation roadmap."
+        path="/agent"
+      />
       {/* Ambient background orbs */}
       <div className="fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
       <div className="fixed bottom-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full bg-accent/[0.03] blur-[100px] pointer-events-none" />
