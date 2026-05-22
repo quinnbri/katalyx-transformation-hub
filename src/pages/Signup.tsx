@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { Seo } from "@/components/Seo";
 
 export default function Signup() {
   const [fullName, setFullName] = useState(() => {
@@ -38,6 +39,11 @@ export default function Signup() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+      <Seo
+        title="Sign up — KATALYX"
+        description="Create your KATALYX account to start an AI-powered transformation assessment and get a prioritized 18-month roadmap."
+        path="/signup"
+      />
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <Link to="/" className="mx-auto mb-4 flex items-center gap-2">

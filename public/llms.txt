@@ -1,0 +1,16 @@
+# KATALYX
+
+> AI-powered digital transformation advisor. Chat for 30 minutes and walk away with a prioritized transformation roadmap, built on frameworks proven across 50+ enterprise transformations.
+
+KATALYX assesses AI Readiness, DevOps Maturity, and Operating Model, then generates an 18-month transformation backlog tailored to your business context.
+
+## Pages
+
+- [Home](/): Overview, how it works, what you get, and free consultation booking.
+- [AI Advisor](/agent): Start a conversational assessment with the KATALYX AI advisor.
+- [Sign up](/signup): Create an account to save assessments and access your dashboard.
+- [Log in](/login): Sign in to an existing KATALYX account.
+
+## Optional
+
+- [Contact](mailto:contact@katalyx.io): Email KATALYX for a free 30-minute consultation.
