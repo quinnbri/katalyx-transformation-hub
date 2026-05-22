@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { Seo } from "@/components/Seo";
 
 interface LocationState {
   from?: { pathname?: string };

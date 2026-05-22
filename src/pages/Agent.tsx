@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Send, Bot, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import AssessmentProgress, { type DomainProgress } from "@/components/agent/AssessmentProgress";
+import { Seo } from "@/components/Seo";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
