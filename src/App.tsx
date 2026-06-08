@@ -63,9 +63,11 @@ const App = () => (
                 <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<Index />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
+                  {/* Login/Signup temporarily disabled — redirect to landing */}
+                  <Route path="/login" element={<Navigate to="/" replace />} />
+                  <Route path="/signup" element={<Navigate to="/" replace />} />
                   <Route path="/shared/:token" element={<SharedBacklog />} />
+
 
                   {/* Authenticated routes — ProtectedRoute enforces login + onboarding */}
                   <Route element={<ProtectedRoute />}>
