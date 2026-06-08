@@ -47,19 +47,12 @@ export default function ProtectedRoute() {
     );
   }
 
-  if (!user) {
-    // Send new visitors to signup (acquisition-first) and remember where
-    // they were trying to go so we can return them after auth.
-    return <Navigate to="/signup" replace state={{ from: location }} />;
-  }
-
-  if (!onboardingDone && location.pathname !== "/onboarding") {
-    return <Navigate to="/onboarding" replace state={{ from: location }} />;
-  }
-
+  // Login temporarily disabled — allow public access to all protected routes
+  // so visitors can test the functionality without signing in.
   return (
     <ProtectedContext.Provider value={{ markOnboardingComplete: () => setOnboardingDone(true) }}>
       <Outlet />
     </ProtectedContext.Provider>
   );
 }
+
