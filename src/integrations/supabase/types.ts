@@ -728,6 +728,16 @@ export type Database = {
         }[]
       }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      get_shared_backlog: {
+        Args: { p_token: string }
+        Returns: {
+          backlog_data: Json
+          business_context: Json
+          company_name: string
+          created_at: string
+          scores: Json
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
