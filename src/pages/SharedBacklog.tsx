@@ -62,11 +62,8 @@ export default function SharedBacklog() {
   useEffect(() => {
     if (!token) return;
     const load = async () => {
-      const { data: rows, error: err } = await supabase
-        .from("shared_backlogs" as any)
-        .select("company_name, backlog_data, scores, business_context, created_at")
-        .eq("share_token", token)
-        .limit(1);
+      const { data: rows, error: err } = await (supabase as any)
+        .rpc("get_shared_backlog", { p_token: token });
 
       if (err || !rows || (rows as any[]).length === 0) {
         setError("This shared backlog was not found or has expired.");
