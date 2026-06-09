@@ -21,9 +21,6 @@ const FinalCTA = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button variant="ctaOutline" size="pill" asChild>
-              <a href="#consultation">Book a free consultation</a>
-            </Button>
           </div>
 
           <p className="mt-4 text-sm text-muted-foreground">

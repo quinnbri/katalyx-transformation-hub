@@ -39,9 +39,6 @@ const Hero = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button variant="ctaOutline" size="pill" asChild>
-              <a href="#consultation">Book a free consultation</a>
-            </Button>
           </div>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
