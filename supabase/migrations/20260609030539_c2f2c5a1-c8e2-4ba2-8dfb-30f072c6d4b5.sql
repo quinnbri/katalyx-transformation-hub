@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.calculate_sprint_progress(uuid, integer) FROM PUBLIC, anon, authenticated;
