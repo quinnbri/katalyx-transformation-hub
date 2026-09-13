@@ -74,7 +74,8 @@ const App = () => (
                     <Route path="/agent" element={<Agent />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/framework/:framework" element={<FrameworkDetail />} />
-                    <Route path="/assessment/:framework" element={<Assessment />} />
+                    {/* Manual assessment retired — everything runs through the advisor */}
+                    <Route path="/assessment/:framework" element={<Navigate to="/agent" replace />} />
                     <Route path="/results/:assessmentId" element={<Results />} />
                     <Route path="/benchmarks" element={<Benchmarks />} />
                     <Route path="/onboarding" element={<Onboarding />} />
