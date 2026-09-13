@@ -221,8 +221,6 @@ export default function Agent() {
             } else if (action.action === "update_progress" && action.domains) {
               setAssessmentFramework(action.framework || null);
               setDomainProgress(action.domains as DomainProgress[]);
-            } else if (action.action === "redirect_to_assessment" && action.framework) {
-              setTimeout(() => navigate(`/assessment/${action.framework}`), 1500);
             } else if (action.action === "redirect_to_dashboard") {
               setTimeout(() => navigate("/dashboard"), 2000);
             } else if (action.action === "redirect_to_results" && action.assessment_id) {
@@ -265,7 +263,7 @@ export default function Agent() {
         </Link>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/40 border border-border/30 text-sm font-medium text-muted-foreground">
           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>AI Assessment Advisor</span>
+          <span>AI Advisor</span>
         </div>
       </nav>
 
