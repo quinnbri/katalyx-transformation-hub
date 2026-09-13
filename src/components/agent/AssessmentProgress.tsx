@@ -8,11 +8,6 @@ interface AssessmentProgressProps {
   framework: string | null;
 }
 
-const frameworkLabels: Record<string, string> = {
-  devops: "DevOps Maturity",
-  ai_readiness: "AI Readiness",
-  enterprise_operating_model: "Operating Model",
-};
 
 export default function AssessmentProgress({ domains, framework }: AssessmentProgressProps) {
   if (!framework || domains.length === 0) return null;
@@ -23,13 +18,13 @@ export default function AssessmentProgress({ domains, framework }: AssessmentPro
   return (
     <div className="w-full animate-fade-in">
       <div className="max-w-3xl mx-auto px-6 py-4">
-        {/* Framework label + count */}
+        {/* Neutral progress label + count */}
         <div className="flex items-center justify-between mb-3">
           <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60">
-            {frameworkLabels[framework] || framework}
+            Our conversation so far
           </span>
           <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-muted-foreground/40">
-            {completed} / {total} complete
+            {completed} / {total} covered
           </span>
         </div>
 
