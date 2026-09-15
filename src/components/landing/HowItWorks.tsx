@@ -1,8 +1,8 @@
 const steps = [
   {
     number: "1",
-    title: "Take Assessment",
-    description: "30-minute enterprise assessment across Strategy, Organization, Platform, Operations, and Governance",
+    title: "Engage",
+    description: "Talk with your AI advisor about what problems you're trying to solve and where the friction is",
   },
   {
     number: "2",
